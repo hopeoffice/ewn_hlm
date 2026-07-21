@@ -6,6 +6,8 @@ import '../widgets/auth_sheet.dart';
 import 'wallet_screen.dart';
 import 'referral_screen.dart';
 
+/// Ported from #screen-profile / .profile-header / .menu-list /
+/// .menu-item in index.html + style.css.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -13,77 +15,179 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
+    return Container(
+      color: AppTheme.bgMain,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // ---- .profile-header (gradient) ----
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppTheme.brand, AppTheme.brandDark],
+              ),
+            ),
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (!app.isAuthenticated) showAuthSheet(context);
+                  },
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 3),
+                    ),
+                    child: const Icon(Icons.person, color: Colors.white, size: 36),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(app.user?.name ?? 'እንግዳ',
+                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(app.user?.phone ?? '',
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
+                if (!app.isAuthenticated)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        side: BorderSide(color: Colors.white.withOpacity(0.5), width: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      onPressed: () => showAuthSheet(context),
+                      child: const Text('ግባ / ይመዝገቡ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // ---- .menu-list ----
+          Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.bgCard,
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+              border: Border.all(color: AppTheme.border),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12)],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _MenuItem(
+                  emoji: '💰',
+                  title: 'የኔ ዋሌት',
+                  sub: app.isAuthenticated ? '${app.coins} coin ፣ ቁጠባ እና ቦነስ' : 'coin፣ ቁጠባ እና ቦነስ',
+                  onTap: () => _requireAuth(context, app, () =>
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WalletScreen()))),
+                ),
+                _MenuItem(
+                  emoji: '🎁',
+                  title: 'ወዳጅዎን ያጋሩ፣ ያትርፉ',
+                  sub: app.isAuthenticated ? '${app.referralCount} ሰው ጋብዘዋል' : 'ጓደኛዎን ሳቡ ሽልማት ያግኙ',
+                  onTap: () => _requireAuth(context, app, () =>
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen()))),
+                ),
+                _MenuItem(emoji: '🌐', title: 'ቋንቋ', sub: 'ቋንቋ ይቀይሩ', onTap: () {}),
+                _MenuItem(emoji: '🎧', title: 'የእርዳታ ማዕከል', sub: 'እርዳታ ያግኙ', onTap: () {}),
+                if (app.isAuthenticated)
+                  _MenuItem(
+                    emoji: '🚪',
+                    title: 'ውጣ',
+                    sub: 'ከሂሳብዎ ይውጡ',
+                    danger: true,
+                    isLast: true,
+                    onTap: () => app.logout(),
+                  ),
+              ],
+            ),
+          ),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text('Ewn Hlm v1.0 | እውን ህልም ©2025',
+                  style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _requireAuth(BuildContext context, AppState app, VoidCallback action) {
+    if (!app.isAuthenticated) {
+      showAuthSheet(context);
+      return;
+    }
+    action();
+  }
+}
+
+/// Ported from .menu-item / .menu-icon / .menu-title / .menu-sub.
+class _MenuItem extends StatelessWidget {
+  final String emoji;
+  final String title;
+  final String sub;
+  final VoidCallback onTap;
+  final bool danger;
+  final bool isLast;
+
+  const _MenuItem({
+    required this.emoji,
+    required this.title,
+    required this.sub,
+    required this.onTap,
+    this.danger = false,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: isLast ? null : const Border(bottom: BorderSide(color: AppTheme.border)),
+        ),
+        child: Row(
           children: [
-            const CircleAvatar(radius: 28, backgroundColor: AppTheme.brand, child: Icon(Icons.person, color: Colors.white)),
-            const SizedBox(width: 12),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: danger ? const Color(0xFFFFE0E0) : AppTheme.accentSoft,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: Text(emoji, style: const TextStyle(fontSize: 18)),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(app.user?.name ?? 'እንግዳ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text(app.user?.phone ?? ''),
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600, color: danger ? AppTheme.danger : AppTheme.textPrimary)),
+                  const SizedBox(height: 2),
+                  Text(sub, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
                 ],
               ),
             ),
-            if (!app.isAuthenticated)
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.brand),
-                onPressed: () => showAuthSheet(context),
-                child: const Text('ግባ / ይመዝገቡ', style: TextStyle(color: Colors.white)),
-              ),
+            if (!danger) const Icon(Icons.chevron_right, color: AppTheme.textSecondary, size: 18),
           ],
         ),
-        const SizedBox(height: 24),
-        _tile(
-          icon: Icons.account_balance_wallet_outlined,
-          title: 'የኔ ዋሌት',
-          subtitle: app.isAuthenticated ? '${app.coins} coin' : 'coin፣ ቁጠባ እና ቦነስ',
-          onTap: () {
-            if (!app.isAuthenticated) {
-              showAuthSheet(context);
-              return;
-            }
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WalletScreen()));
-          },
-        ),
-        _tile(
-          icon: Icons.card_giftcard,
-          title: 'ወዳጅዎን ያጋሩ፣ ያትርፉ',
-          subtitle: app.isAuthenticated ? '${app.referralCount} ሰው ጋብዘዋል' : 'ጓደኛዎን ሳቡ ሽልማት ያግኙ',
-          onTap: () {
-            if (!app.isAuthenticated) {
-              showAuthSheet(context);
-              return;
-            }
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen()));
-          },
-        ),
-        _tile(icon: Icons.language, title: 'ቋንቋ', subtitle: 'ቋንቋ ይቀይሩ', onTap: () {}),
-        _tile(icon: Icons.support_agent, title: 'የእርዳታ ማዕከል', subtitle: 'እርዳታ ያግኙ', onTap: () {}),
-        if (app.isAuthenticated)
-          _tile(
-            icon: Icons.logout,
-            title: 'ውጣ',
-            subtitle: 'ከሂሳብዎ ይውጡ',
-            onTap: () => app.logout(),
-          ),
-      ],
-    );
-  }
-
-  Widget _tile({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        leading: Icon(icon, color: AppTheme.brand),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
       ),
     );
   }

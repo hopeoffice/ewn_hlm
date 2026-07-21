@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'state/app_state.dart';
 import 'services/storage_service.dart';
 import 'services/push_service.dart';
@@ -10,12 +11,10 @@ import 'widgets/root_scaffold.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Step 1 — Android reads android/app/google-services.json natively
-  // (added from the Firebase Console "ewn-hlm" project), so no explicit
-  // FirebaseOptions object is needed here — Firebase.initializeApp()
-  // picks it up automatically as long as the Google Services Gradle
-  // plugin is applied. See README.md "Firebase ግንኙነት" section.
-  await Firebase.initializeApp();
+  // Step 1 — explicit FirebaseOptions (see firebase_options.dart) instead
+  // of relying on the google-services Gradle plugin to auto-generate
+  // values.xml from android/app/google-services.json.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Step 4 — Hive (cart/likes/orders/product cache) + secure storage init.
   await StorageService.init();

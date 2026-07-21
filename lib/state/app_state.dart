@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user_model.dart';
+import '../models/category.dart';
 import '../services/firebase_service.dart';
 import '../services/storage_service.dart';
 import '../services/push_service.dart';
@@ -91,7 +92,11 @@ class AppState extends ChangeNotifier {
     await StorageService.saveOrders(orders);
 
     final deviceId = StorageService.getOrCreateDeviceId();
-    await _fb.linkDeviceToUser(phone, deviceId);
+    try {
+      await _fb.linkDeviceToUser(phone, deviceId);
+    } catch (_) {
+      // Non-fatal — login should still succeed even if this write fails.
+    }
 
     _watchCoins(phone);
     PushService.registerForUser(phone); // Step 3 — fire-and-forget
@@ -312,14 +317,28 @@ class AppState extends ChangeNotifier {
 
   // ---------------- Category / search filter ----------------
 
+  // Fallback categories (same as CATEGORIES in main-config.js). TODO:
+  // wire up loadCategoriesFromFirebase() equivalent once the admin
+  // panel's `settings/categories` doc is ported.
+  List<AppCategory> get categories => kDefaultCategories;
+
   List<Product> get filteredProducts {
     return products.where((p) {
+      if (p.hidden) return false;
       final matchesCategory = activeCategory == 'all' || p.category == activeCategory;
       final matchesSearch = searchQuery.isEmpty ||
           p.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
           p.nameEn.toLowerCase().contains(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     }).toList();
+  }
+
+  /// Mirrors the #discount-section in index.html — only products with a
+  /// real discountedPrice < price, shown ahead of the main grid.
+  List<Product> get discountedProducts {
+    return products
+        .where((p) => !p.hidden && p.discountedPrice != null && p.discountedPrice! < p.price)
+        .toList();
   }
 
   void setCategory(String cat) {

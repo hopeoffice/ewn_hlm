@@ -73,10 +73,8 @@ class ReferralScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.brand),
                         icon: const Icon(Icons.share, color: Colors.white, size: 18),
                         label: const Text('አጋራ', style: TextStyle(color: Colors.white)),
-                        onPressed: () => SharePlus.instance.share(
-                          ShareParams(
-                            text: '🌟 Ewn Hlm ላይ ይግቡ! የግብዣ ኮድ: $code\n$link',
-                          ),
+                        onPressed: () => Share.share(
+                          '🌟 Ewn Hlm ላይ ይግቡ! የግብዣ ኮድ: $code\n$link',
                         ),
                       ),
                     ),

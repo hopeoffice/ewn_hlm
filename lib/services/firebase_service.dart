@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
@@ -91,10 +91,11 @@ class FirebaseService {
     });
   }
 
-  // ---------------- Device linking (fraud guard, main-coins.js) ----------------
-
+  // ---------------- Device linking (fraud guard) ----------------
+  // Matches the real database_rules.json: only users/{phone}/deviceId
+  // is client-writable (there is no top-level "deviceLinks" node).
   Future<void> linkDeviceToUser(String phone, String deviceId) {
-    return _rtdb.ref('deviceLinks/$deviceId').set(phone);
+    return _rtdb.ref('users/$phone/deviceId').set(deviceId);
   }
 
   // ---------------- Cloudflare Worker calls (unchanged backend) ----------------
@@ -220,6 +221,14 @@ class FirebaseService {
 
   /// Saves the FCM token under users/{phone}/fcmToken so the Cloudflare
   /// Worker / any future admin tool can target this device directly.
+  ///
+  /// ⚠️ NOT in the current database_rules.json whitelist (only location,
+  /// cart, orders, deviceId, referralCount are client-writable under
+  /// users/{phone}) — this write WILL be denied until you add:
+  ///   "fcmToken": { ".write": true }
+  /// under "users" → "$phone" in Firebase Console → Realtime Database →
+  /// Rules, then Publish. Callers must not let this crash the app — see
+  /// the try/catch in PushService.registerForUser().
   Future<void> saveFcmToken(String phone, String token) {
     return _rtdb.ref('users/$phone/fcmToken').set(token);
   }
