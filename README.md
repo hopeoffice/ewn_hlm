@@ -22,6 +22,25 @@ flutter create .
 `google-services.json` ጋር በትክክል የሚገጣጠም) ይፈጥራል፣ የነበሩትን `lib/`/`pubspec.yaml`
 ፋይሎችዎን አይነካም። ከዚያ በኋላ ወደ ደረጃ 1 ይቀጥሉ።
 
+## Codemagic (cloud build — no local Flutter/Android Studio needed)
+
+This repo includes `codemagic.yaml` at the root. Codemagic auto-detects
+it and, on every build, will:
+1. Scaffold `android/` automatically if it isn't in the repo yet (so you
+   never need to run `flutter create` locally).
+2. Wire the Firebase Google Services Gradle plugin (`scripts/wire_google_services.sh`)
+   so `android/app/google-services.json` actually gets picked up.
+3. `flutter pub get` + `flutter build apk --release`.
+4. Upload the resulting APK as a build artifact for you to download.
+
+Setup on codemagic.io: **Add application → GitHub → hopeoffice/ewn_hlm**
+→ it will detect `codemagic.yaml` and show the **"Ewn Hlm Android APK"**
+workflow → **Start new build**. When it finishes (green ✅), open
+**Artifacts** and download the `.apk`.
+
+If a build fails, copy the red error line from the build log here and
+the gradle wiring can be adjusted precisely for it.
+
 ## 1. Prerequisites
 - Flutter SDK (`flutter --version` should work) — or the Flutter plugin inside Android Studio
 - ✅ Already done for you: `android/app/google-services.json` (from the
