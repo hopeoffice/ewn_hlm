@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "770896835814",
+    "firebase_url": "https://ewn-hlm-default-rtdb.firebaseio.com",
+    "project_id": "ewn-hlm",
+    "storage_bucket": "ewn-hlm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770896835814:android:70322375b0853a72aaf727",
+        "android_client_info": {
+          "package_name": "com.example.ewn_hlm"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "770896835814-pe9kutl3n199a49doavickujhpc4ue2c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBXJBGhJKBA0-KTycLni1pvFOZfzSJW50"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "770896835814-pe9kutl3n199a49doavickujhpc4ue2c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
