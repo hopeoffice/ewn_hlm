@@ -7,6 +7,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
 import '../models/cart_item.dart';
+import '../models/category.dart';
 
 /// Step 1 of the migration plan: same two databases the web app already
 /// uses, called with the native Flutter SDKs instead of firebase-init.js's
@@ -30,6 +31,57 @@ class FirebaseService {
         .map((d) => Product.fromMap(d.id, d.data()))
         .where((p) => !p.hidden)
         .toList());
+  }
+
+  // ---------------- Categories (admin-managed, Realtime DB, one-time read) ----------------
+
+  /// Mirrors loadCategoriesFromFirebase() in main-config.js: reads the
+  /// admin panel's `settings/categories` list once. Returns null (not an
+  /// empty list) when Firebase has nothing there yet or the read fails,
+  /// so the caller (AppState) knows to fall back to the local cache /
+  /// static defaults instead of wiping out a previously-known good list.
+  /// "all" is intentionally NOT included here — AppState pins it first.
+  Future<List<AppCategory>?> fetchCategories() async {
+    try {
+      final snap = await _rtdb.ref('settings/categories').get();
+      final data = snap.value;
+      if (data is List && data.isNotEmpty) {
+        return data
+            .whereType<Map>()
+            .map((c) => AppCategory.fromMap(c))
+            .toList();
+      }
+      if (data is Map && data.isNotEmpty) {
+        // Realtime DB can also serialize a JS array as a keyed map.
+        return data.values.whereType<Map>().map((c) => AppCategory.fromMap(c)).toList();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Ported from the requestLocationPermission() Realtime DB write in
+  /// main-actions.js: users/{phone}/location, Realtime DB only (never
+  /// Firestore).
+  Future<void> saveLocation(String phone, Map<String, dynamic> location) {
+    return _rtdb.ref('users/$phone/location').set(location);
+  }
+
+  /// Ported from loadPaymentAccountsFromDb() in main-actions.js. Admin can
+  /// override the fallback account numbers via settings/paymentAccounts;
+  /// returns null (keep fallbacks) if nothing is set or the read fails.
+  Future<Map<String, String>?> fetchPaymentAccounts() async {
+    try {
+      final snap = await _rtdb.ref('settings/paymentAccounts').get();
+      final data = snap.value;
+      if (data is Map) {
+        return data.map((k, v) => MapEntry(k.toString(), v.toString()));
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ---------------- Users (custom phone+PIN auth, Realtime DB) ----------------
@@ -91,6 +143,160 @@ class FirebaseService {
     });
   }
 
+  // ---------------- Coin purchases / transaction history (main-coins.js) ----------------
+
+  /// Ported from submitBuyCoins(): writes the pending request to
+  /// coinPurchases/{id} (admin-read-only) AND mirrors it under the user's
+  /// own node so it shows up in Transaction History immediately, then
+  /// notifies Telegram with the receipt photo for admin approval.
+  Future<bool> submitBuyCoins({
+    required String phone,
+    required String name,
+    required double amountETB,
+    required int coins,
+    required String paymentMethodLabel,
+    required List<int> receiptBytes,
+    required String receiptFilename,
+  }) async {
+    final id = 'COIN-${DateTime.now().millisecondsSinceEpoch.toRadixString(36).toUpperCase()}';
+    final purchase = {
+      'id': id,
+      'phone': phone,
+      'name': name,
+      'amountETB': amountETB,
+      'coins': coins,
+      'paymentMethod': paymentMethodLabel,
+      'status': 'pending',
+      'date': DateTime.now().toIso8601String(),
+    };
+    try {
+      await _rtdb.ref('coinPurchases/$id').set(purchase);
+      unawaited(_rtdb.ref('users/$phone/coinPurchaseMirror/$id').set(purchase));
+
+      final caption = [
+        '🪙 የ coin ግዢ ጥያቄ / Coin Purchase Request',
+        '',
+        '🆔 ID: $id',
+        '👤 ደንበኛ: $name ($phone)',
+        '💳 ክፍያ: $paymentMethodLabel',
+        '💰 የከፈሉት: $amountETB ETB',
+        '🪙 የሚያገኙት: $coins Coins',
+      ].join('\n');
+      await sendReceiptToTelegram(caption: caption, receiptBytes: receiptBytes, filename: receiptFilename);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Ported from renderTransactionHistoryScreen()'s two parallel reads —
+  /// pending purchase requests. Filtering to status=='pending' (approved
+  /// ones show up via watchCoinTransactions() instead, as a
+  /// purchase_approved row) is the caller's job (AppState), same as the
+  /// web app's `if (p.status === 'pending')` check.
+  Stream<List<Map<String, dynamic>>> watchCoinPurchases(String phone) {
+    return _rtdb.ref('users/$phone/coinPurchaseMirror').onValue.map((event) {
+      final v = event.snapshot.value;
+      if (v is! Map) return <Map<String, dynamic>>[];
+      return v.entries.map((e) {
+        final m = Map<String, dynamic>.from(e.value as Map);
+        m['id'] = e.key;
+        return m;
+      }).toList();
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> watchCoinTransactions(String phone) {
+    return _rtdb.ref('users/$phone/coinTxMirror').onValue.map((event) {
+      final v = event.snapshot.value;
+      if (v is! Map) return <Map<String, dynamic>>[];
+      return v.entries.map((e) {
+        final m = Map<String, dynamic>.from(e.value as Map);
+        m['id'] = e.key;
+        return m;
+      }).toList();
+    });
+  }
+
+  // ---------------- Notifications (Realtime DB, main-render.js initNotificationsListener) ----------------
+
+  /// Merges global broadcast notifications (`notifications`, all users)
+  /// with personal ones (`users/{phone}/notifications`), de-duplicated by
+  /// id and sorted newest-first — same as mergeAndRender() in main-render.js.
+  /// Emits a fresh combined list every time either branch changes.
+  Stream<List<Map<String, dynamic>>> watchNotifications({String? phone}) {
+    final controller = StreamController<List<Map<String, dynamic>>>.broadcast();
+    List<Map<String, dynamic>> global = [];
+    List<Map<String, dynamic>> personal = [];
+
+    void emit() {
+      final merged = [...global, ...personal];
+      final seen = <String>{};
+      final deduped = merged.where((n) {
+        final id = n['id'] as String;
+        if (seen.contains(id)) return false;
+        seen.add(id);
+        return true;
+      }).toList();
+      deduped.sort((a, b) {
+        final ta = (a['timestamp'] as num?)?.toInt() ??
+            DateTime.tryParse(a['date']?.toString() ?? '')?.millisecondsSinceEpoch ??
+            0;
+        final tb = (b['timestamp'] as num?)?.toInt() ??
+            DateTime.tryParse(b['date']?.toString() ?? '')?.millisecondsSinceEpoch ??
+            0;
+        return tb.compareTo(ta);
+      });
+      controller.add(deduped);
+    }
+
+    final globalSub = _rtdb
+        .ref('notifications')
+        .orderByChild('timestamp')
+        .limitToLast(50)
+        .onValue
+        .listen((event) {
+      global = [];
+      final val = event.snapshot.value;
+      if (val is Map) {
+        val.forEach((key, v) {
+          global.add({'id': key.toString(), ...Map<String, dynamic>.from(v as Map)});
+        });
+      }
+      emit();
+    });
+
+    StreamSubscription<DatabaseEvent>? personalSub;
+    if (phone != null) {
+      personalSub = _rtdb
+          .ref('users/$phone/notifications')
+          .orderByChild('timestamp')
+          .limitToLast(30)
+          .onValue
+          .listen((event) {
+        personal = [];
+        final val = event.snapshot.value;
+        if (val is Map) {
+          val.forEach((key, v) {
+            personal.add({
+              'id': key.toString(),
+              ...Map<String, dynamic>.from(v as Map),
+              'personal': true,
+            });
+          });
+        }
+        emit();
+      });
+    }
+
+    controller.onCancel = () {
+      globalSub.cancel();
+      personalSub?.cancel();
+    };
+
+    return controller.stream;
+  }
+
   // ---------------- Device linking (fraud guard) ----------------
   // Matches the real database_rules.json: only users/{phone}/deviceId
   // is client-writable (there is no top-level "deviceLinks" node).
@@ -118,13 +324,63 @@ class FirebaseService {
     return res.statusCode == 200;
   }
 
-  Future<bool> redeemCoins(String phone, int coins) async {
+  /// Ported from handleRedeemCoins() in worker.js. This is the ONLY way
+  /// coins get spent — always at checkout, always PIN-gated server-side.
+  /// [cartTotal] must be the ETB total of the order being placed (the
+  /// worker rejects redemption if this is below MIN_REDEEM_ETB, and caps
+  /// coinsToUse at etbToCoins(cartTotal) regardless of what's requested).
+  /// [orderId]/[orderPercent] are optional, purely descriptive — shown in
+  /// Transaction History, never trusted for balance math.
+  Future<RedeemCoinsResult> redeemCoins({
+    required String phone,
+    required String pin,
+    required int coinsToUse,
+    required double cartTotal,
+    String? orderId,
+    int? orderPercent,
+  }) async {
     final res = await http.post(
       Uri.parse('$workerBaseUrl/redeemCoins'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'phone': phone, 'coins': coins}),
+      body: jsonEncode({
+        'phone': phone,
+        'pin': pin,
+        'coinsToUse': coinsToUse,
+        'cartTotal': cartTotal,
+        if (orderId != null) 'orderId': orderId,
+        if (orderPercent != null) 'orderPercent': orderPercent,
+      }),
     );
-    return res.statusCode == 200;
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return RedeemCoinsResult(
+      ok: body['ok'] == true,
+      error: body['error'] as String?,
+      coins: (body['coins'] as num?)?.toInt(),
+      discountETB: (body['discountETB'] as num?)?.toDouble(),
+      maxUsable: (body['maxUsable'] as num?)?.toInt(),
+    );
+  }
+
+  /// Ported from handleResetPin() in worker.js — the "ፓስዎርድ ረሳሁ?" flow.
+  /// [securityAnswer] is compared case-insensitively server-side against
+  /// what was stored at registration; the local comparison in the UI is
+  /// just for instant feedback and is never trusted on its own.
+  Future<ResetPinResult> resetPin({
+    required String phone,
+    required String securityAnswer,
+    required String newPin,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$workerBaseUrl/resetPin'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'phone': phone,
+        'securityAnswer': securityAnswer.toLowerCase(),
+        'newPin': newPin,
+      }),
+    );
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return ResetPinResult(ok: body['ok'] == true, error: body['error'] as String?);
   }
 
   Future<void> sendTelegramMessage(String text) {
@@ -232,4 +488,28 @@ class FirebaseService {
   Future<void> saveFcmToken(String phone, String token) {
     return _rtdb.ref('users/$phone/fcmToken').set(token);
   }
+}
+
+/// Result of FirebaseService.redeemCoins() — mirrors the JSON shape
+/// returned by handleRedeemCoins() in worker.js. [error] is one of:
+/// 'invalid_phone', 'invalid_amount', 'user_not_found', 'locked_try_later',
+/// 'wrong_pin', 'out_of_range', 'exceeds_max_usable', or 'internal_error'.
+class RedeemCoinsResult {
+  final bool ok;
+  final String? error;
+  final int? coins; // new balance, only present when ok == true
+  final double? discountETB; // only present when ok == true
+  final int? maxUsable; // only present when error == 'exceeds_max_usable'
+
+  RedeemCoinsResult({required this.ok, this.error, this.coins, this.discountETB, this.maxUsable});
+}
+
+/// Result of FirebaseService.resetPin() — mirrors handleResetPin() in
+/// worker.js. [error] is one of: 'invalid_phone', 'invalid_pin',
+/// 'locked_try_later', 'user_not_found', 'wrong_answer', or 'internal_error'.
+class ResetPinResult {
+  final bool ok;
+  final String? error;
+
+  ResetPinResult({required this.ok, this.error});
 }

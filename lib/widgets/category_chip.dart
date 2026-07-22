@@ -7,8 +7,15 @@ class CategoryChip extends StatelessWidget {
   final AppCategory category;
   final bool active;
   final VoidCallback onTap;
+  final String lang;
 
-  const CategoryChip({super.key, required this.category, required this.active, required this.onTap});
+  const CategoryChip({
+    super.key,
+    required this.category,
+    required this.active,
+    required this.onTap,
+    this.lang = 'am',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +36,7 @@ class CategoryChip extends StatelessWidget {
             Text(category.emoji, style: const TextStyle(fontSize: 22)),
             const SizedBox(height: 6),
             Text(
-              category.label,
+              category.label(lang),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

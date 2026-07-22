@@ -1,0 +1,1301 @@
+{
+  "faq_001": {
+    "category": "orders",
+    "question": "ትዕዛዜ መቼ ይደርሳል?",
+    "answer": "ሰላም! 😊 ትዕዛዝዎ በ1-3 የሥራ ቀናት ውስጥ እጅዎ ላይ ይደርሳል። ካስቀመጡ በኋላ 📦 'ትዕዛዞች' ገጽ ላይ ሄደው በቀጥታ መከታተል ይችላሉ — እንግዲህ እርስዎን በቅርብ እንከታተላለን!",
+    "keywords": [
+      "delivery",
+      "ይደርሳል",
+      "መቼ",
+      "ጊዜ",
+      "ይመጣ",
+      "ቀን",
+      "ይደርስልኛል",
+      "ስንት ቀን",
+      "ምን ያህል ቀን",
+      "የመኪያ ጊዜ",
+      "ለመቼ"
+    ],
+    "question_en": "When will my order arrive?",
+    "answer_en": "Hi there! 😊 Your order will reach you within 1-3 business days. Once placed, you can track it anytime under the 📦 'Orders' page — we're keeping a close eye on it for you!",
+    "keywords_en": [
+      "delivery",
+      "arrive",
+      "when",
+      "days",
+      "shipping",
+      "order",
+      "how long",
+      "eta",
+      "estimated",
+      "tracking time"
+    ]
+  },
+  "faq_002": {
+    "category": "orders",
+    "question": "ትዕዛዜን እንዴት መሰረዝ ይቻላል?",
+    "answer": "ምንም ችግር የለም! ትዕዛዝ ካስቀመጡ ከ2 ሰዓት ውስጥ በቀላሉ ሰርዝ ማድረግ ይችላሉ። ከ2 ሰዓት ካለፈ ብቻ የደንበኞች አገልግሎታችንን ቡድን ያግኙ — ደስ ብሎን እንረዳዎታለን! 🙏",
+    "keywords": [
+      "ሰርዝ",
+      "cancel",
+      "ትዕዛዝ",
+      "መሰረዝ",
+      "መቀየር",
+      "ስርዝ ማድረግ",
+      "አልፈልግም",
+      "ቀየርኩ ሀሳቤን"
+    ],
+    "question_en": "How can I cancel my order?",
+    "answer_en": "No worries at all! You can cancel within 2 hours of placing the order, no questions asked. If it's been longer, just reach out to our Customer Support team — we're happy to help sort it out. 🙏",
+    "keywords_en": [
+      "cancel",
+      "cancellation",
+      "order",
+      "undo",
+      "changed my mind",
+      "stop order",
+      "void"
+    ]
+  },
+  "faq_003": {
+    "category": "orders",
+    "question": "ትዕዛዜ የት ደረሰ?",
+    "answer": "በቀላሉ ማወቅ ይችላሉ! 📦 'ትዕዛዞች' ገጽ ላይ ሄደው ሁኔታውን ይከታተሉ፦ Pending → Processing → Delivered። እርስዎ የት ደረሰ የማወቅ መብት አለዎት፣ ስለዚህ ማንኛውም ጊዜ ይመልከቱ! 😊",
+    "keywords": [
+      "track",
+      "status",
+      "የት",
+      "ሁኔታ",
+      "ደረጃ",
+      "ትዕዛዝ ሁኔታ",
+      "ክትትል",
+      "ደረሰ ወይ",
+      "የት ነው",
+      "አሁን የት"
+    ],
+    "question_en": "Where is my order?",
+    "answer_en": "Easy to check! Head over to the 📦 'Orders' page to follow your order's journey: Pending → Processing → Delivered. You deserve to know exactly where it is, so feel free to check anytime! 😊",
+    "keywords_en": [
+      "track",
+      "status",
+      "where",
+      "order",
+      "location",
+      "current status",
+      "right now",
+      "find my order"
+    ]
+  },
+  "faq_004": {
+    "category": "orders",
+    "question": "ትዕዛዜ 'Processing' ላይ ቆሟል ምን ማለት ነው?",
+    "answer": "'Processing' ማለት ትዕዛዝዎ ደርሶናል እና በደንብ እያዘጋጅነው ነው ማለት ነው! 💪 ምንም አይጨነቁ — ብዙም ሳይቆይ ለቤትዎ ይላካል። እናመሰግናለን ስለ ትዕግስትዎ!",
+    "keywords": [
+      "processing",
+      "ቆሟል",
+      "ሂደት",
+      "ገና ነው",
+      "ስንት ይቆያል",
+      "ለምን ቆሟል"
+    ],
+    "question_en": "My order is stuck on 'Processing' — what does that mean?",
+    "answer_en": "'Processing' simply means we've received your order and are carefully preparing it! 💪 No need to worry — it'll be on its way to you soon. Thank you for your patience!",
+    "keywords_en": [
+      "processing",
+      "stuck",
+      "status",
+      "pending",
+      "how long stuck",
+      "still processing",
+      "why pending"
+    ]
+  },
+  "faq_005": {
+    "category": "orders",
+    "question": "የተሳሳተ ምርት ደረሰኝ ምን ላድርግ?",
+    "answer": "በጣም አዝነናል ስለዚህ ስህተት! 🙏 ምርቱ ከደረሰ በ24 ሰዓት ውስጥ የደንበኞች አገልግሎታችንን ያነጋግሩ፣ ትክክለኛውን ምርት በፍጥነት እናቀርብልዎታለን — ቃላችን ነው!",
+    "keywords": [
+      "wrong",
+      "ተሳሳተ",
+      "ስህተት",
+      "የተሳሳተ ምርት",
+      "ሌላ ምርት ደረሰኝ",
+      "ያልጠየኩት",
+      "ለውጥ"
+    ],
+    "question_en": "I received the wrong item — what should I do?",
+    "answer_en": "We're so sorry for the mix-up! 🙏 Please contact our Customer Support within 24 hours of receiving the item, and we'll get the correct product to you quickly — that's a promise!",
+    "keywords_en": [
+      "wrong",
+      "incorrect",
+      "item",
+      "mistake",
+      "received",
+      "different item",
+      "not what i ordered",
+      "swap"
+    ]
+  },
+  "faq_006": {
+    "category": "orders",
+    "question": "ምርቱ ተሰብሮ ወይም ጠፍቶ መጣ ምን ላድርግ?",
+    "answer": "በጣም አዝነናል! 💔 ፎቶ ካነሱ በኋላ ወዲያውኑ የደንበኞች አገልግሎታችንን ያግኙ — በፍጥነት እናስተካክልልዎታለን፣ ቅር አንልዎትም!",
+    "keywords": [
+      "broken",
+      "ተሰበረ",
+      "ተሰብሮ",
+      "ጠፍቶ",
+      "ጉዳት",
+      "defect",
+      "ተበላሸ",
+      "አልሰራም",
+      "ችግር አለበት"
+    ],
+    "question_en": "My item arrived broken or damaged — what do I do?",
+    "answer_en": "We're really sorry to hear that! 💔 Please take a photo and contact our Customer Support team right away — we'll make it right for you quickly, we promise!",
+    "keywords_en": [
+      "broken",
+      "damaged",
+      "defective",
+      "missing",
+      "package",
+      "not working",
+      "faulty",
+      "issue with item"
+    ]
+  },
+  "faq_007": {
+    "category": "orders",
+    "question": "ምርት መመለስ ወይም ማስቀየር ይቻላል?",
+    "answer": "በፍጹም ይቻላል! ምርቱ ከደረሰ በ48 ሰዓት ውስጥ ካልተነካ እና original ሁኔታ ላይ ካለ በቀላሉ መመለስ ይችላሉ። የደንበኞች አገልግሎታችንን ያነጋግሩ እና በፍጥነት እናስተናግድዎታለን። 😊",
+    "keywords": [
+      "return",
+      "refund",
+      "መመለስ",
+      "ማስቀየር",
+      "exchange",
+      "አልወደድኩትም",
+      "መቀየር እፈልጋለሁ",
+      "ተመለስ"
+    ],
+    "question_en": "Can I return or exchange my order?",
+    "answer_en": "Of course! As long as it's within 48 hours of receiving it, unused, and in original condition, returning or exchanging is no problem. Just contact our Customer Support and we'll take great care of you. 😊",
+    "keywords_en": [
+      "return",
+      "exchange",
+      "refund",
+      "unused",
+      "original",
+      "dont like it",
+      "want to exchange",
+      "send back"
+    ]
+  },
+  "faq_008": {
+    "category": "orders",
+    "question": "ትዕዛዜን ያሳዩኝ",
+    "answer": "በቀላሉ ማየት ይችላሉ! ከታች ያለውን 📦 'ትዕዛዞች' ቁልፍ ይጫኑ — ያደረጉት ግዢ ሁሉ እዛ ይታያል። 😊",
+    "keywords": [
+      "orders",
+      "ትዕዛዞች",
+      "ታሪክ",
+      "history",
+      "ያሳይ",
+      "የግዢ ታሪክ",
+      "ምርቶቼ",
+      "ያዘዝኩት"
+    ],
+    "question_en": "Show me my orders",
+    "answer_en": "Easy! Just tap the 📦 'Orders' button at the bottom of the screen — every purchase you've made will be right there. 😊",
+    "keywords_en": [
+      "orders",
+      "history",
+      "list",
+      "show",
+      "view",
+      "purchase history",
+      "my purchases",
+      "past orders"
+    ]
+  },
+  "faq_009": {
+    "category": "payment",
+    "question": "የትኞቹ የክፍያ ዘዴዎች ተቀባይነት አላቸው?",
+    "answer": "ብዙ አማራጭ አለን! Telebirr, CBE Birr, Awash Bank, Dashen Bank፣ እንዲሁም Bank Transfer ሁሉንም እንቀበላለን — ለእርስዎ የሚቀልልዎትን ይምረጡ! 💳",
+    "keywords": [
+      "payment",
+      "ክፍያ",
+      "telebirr",
+      "cbe",
+      "awash",
+      "dashen",
+      "bank",
+      "ዘዴ",
+      "ምን ይቀበላሉ",
+      "የክፍያ አማራጭ",
+      "ገንዘብ"
+    ],
+    "question_en": "Which payment methods are accepted?",
+    "answer_en": "We've got you covered with options! We accept Telebirr, CBE Birr, Awash Bank, Dashen Bank, and Bank Transfer — pick whichever works best for you! 💳",
+    "keywords_en": [
+      "payment",
+      "telebirr",
+      "cbe",
+      "awash",
+      "dashen",
+      "bank",
+      "method",
+      "pay",
+      "payment options",
+      "accepted payments",
+      "money"
+    ]
+  },
+  "faq_010": {
+    "category": "payment",
+    "question": "እንዴት ክፍያ ይፈጸማል?",
+    "answer": "በቀላሉ ይከናወናል! ምርቱን ወደ ጋሪ ካስቀመጡ በኋላ 'ትዕዛዝ ላክ' ይጫኑ፣ የክፍያ ዘዴ ይምረጡ፣ ከዚያ Bank Account ቁጥሩን ያስቀምጡ — ቀላል ነው አይደል? 😊",
+    "keywords": [
+      "እንዴት",
+      "ክፍያ",
+      "how to pay",
+      "pay",
+      "እንዴት ይከፍላል",
+      "የክፍያ ሂደት",
+      "ደረጃዎች"
+    ],
+    "question_en": "How do I make a payment?",
+    "answer_en": "Super simple! Add your item to the cart, tap 'Place Order', choose your payment method, then enter the bank account number shown — that's it! 😊",
+    "keywords_en": [
+      "how",
+      "pay",
+      "payment",
+      "checkout",
+      "order",
+      "payment process",
+      "checkout steps",
+      "how do i pay"
+    ]
+  },
+  "faq_011": {
+    "category": "payment",
+    "question": "ክፍያ ከፈለኩ ግን ትዕዛዝ አልተረጋገጠም",
+    "answer": "ምንም አይጨነቁ! ስክሪንሾት ወይም ደረሰኝ ይያዙ ከዚያ የደንበኞች አገልግሎታችንን ያነጋግሩ — ትዕዛዝዎን በቅርብ ጊዜ እናረጋግጥልዎታለን፣ ለእርስዎ ጥንቃቄ እናደርጋለን። 🙏",
+    "keywords": [
+      "ክፍያ",
+      "አልተረጋገጠ",
+      "payment failed",
+      "pending payment",
+      "ምን ላድርግ",
+      "ችግር ተፍጥሯ"
+    ],
+    "question_en": "I paid but my order wasn't confirmed",
+    "answer_en": "Please don't worry! Just keep a screenshot or receipt and contact our Customer Support — we'll confirm your order promptly and take good care of it for you. 🙏",
+    "keywords_en": [
+      "paid",
+      "not confirmed",
+      "payment",
+      "failed",
+      "receipt",
+      "pending confirmation",
+      "stuck payment",
+      "issue"
+    ]
+  },
+  "faq_012": {
+    "category": "payment",
+    "question": "ሁለቴ ክፍያ ተቆርጦብኛል",
+    "answer": "ይቅርታ ስለዚህ ምስቅልቅል! 🙏 ወዲያው የደንበኞች አገልግሎታችንን ያነጋግሩ፣ ደረሰኙን ይዘው ይምጡ — ሁኔታውን በፍጥነት እናስተካክልልዎታለን፣ ገንዘብዎ ይመለስልዎታል።",
+    "keywords": [
+      "ሁለቴ",
+      "double charge",
+      "twice",
+      "ተቆርጦ",
+      "ድርብ ክፍያ",
+      "ተደጋጋሚ ክፍያ",
+      "ስህተት ክፍያ"
+    ],
+    "question_en": "I was charged twice",
+    "answer_en": "We're sorry for the trouble! 🙏 Please contact our Customer Support right away with your receipts — we'll fix the double charge quickly and make sure your money comes back to you.",
+    "keywords_en": [
+      "double",
+      "charged",
+      "twice",
+      "duplicate",
+      "refund",
+      "duplicate payment",
+      "charged again",
+      "billing error"
+    ]
+  },
+  "faq_013": {
+    "category": "payment",
+    "question": "ሂሳቤ ተመልሶ ይሄዳልን?",
+    "answer": "አዎ፣ ሙሉ በሙሉ! ትዕዛዝ ከተሰረዘ ወይም ምርት ከተመለሰ የተከፈለው ገንዘብ ወደ ሒሳብዎ ይመለሳል። 3-5 ቀናት ብቻ ይወስዳል — ታጋሽ ይሁኑ፣ እናመሰግናለን! 😊",
+    "keywords": [
+      "refund",
+      "ይመለሳል",
+      "ሂሳብ",
+      "ተመልሶ",
+      "ገንዘቤ መልስ",
+      "ሂሳብ ይመለስ",
+      "ስንት ቀን ይወስዳል"
+    ],
+    "question_en": "Will I get a refund?",
+    "answer_en": "Yes, absolutely! If your order is cancelled or returned, your full payment will be refunded within 3-5 business days. Thanks for your patience — we appreciate you! 😊",
+    "keywords_en": [
+      "refund",
+      "money back",
+      "return",
+      "cancel",
+      "get my money back",
+      "how long refund",
+      "reimburse"
+    ]
+  },
+  "faq_014": {
+    "category": "payment",
+    "question": "የትኛው ቁጥር ክፍያ ልፈጽም?",
+    "answer": "በቀላሉ ያገኙታል! ትዕዛዝ ሲሰጡ የክፍያ ዝርዝሩ (Bank + Account Number) በራስ-ሰር ይታይልዎታል። ያንኑ ቁጥር ይጠቀሙ — ምንም ላማስታክ የለም! 😊",
+    "keywords": [
+      "ቁጥር",
+      "account number",
+      "ወዴት",
+      "bank number",
+      "የት ይከፍላል",
+      "ቁጥር የት ይገኛል"
+    ],
+    "question_en": "Which account number should I pay to?",
+    "answer_en": "You'll see it right away! When you place an order, the payment details (Bank + Account Number) are shown automatically — just use that number, nothing to memorize! 😊",
+    "keywords_en": [
+      "account",
+      "number",
+      "which",
+      "bank",
+      "transfer",
+      "where to find",
+      "payment details location"
+    ]
+  },
+  "faq_015": {
+    "category": "payment",
+    "question": "ክፍያ ደህንነቱ የተጠበቀ ነው?",
+    "answer": "ሙሉ በሙሉ ደህና ነው! 🔒 ክፍያ ቀጥታ ወደ Bank ብቻ ነው የሚሄደው — የካርድ ወይም Bank ዝርዝርዎ ከኛ ጋር በፍጹም አይቀመጥም። የእርስዎ ደህንነት ለኛ ቅድሚያ ነው!",
+    "keywords": [
+      "safe",
+      "secure",
+      "ደህንነት",
+      "payment security",
+      "እምነት",
+      "ስርቆት",
+      "ጥንቃቄ"
+    ],
+    "question_en": "Is my payment secure?",
+    "answer_en": "Completely safe! 🔒 Your payment goes directly to the bank — we never store your card or bank details with us. Your security is our top priority!",
+    "keywords_en": [
+      "safe",
+      "secure",
+      "security",
+      "payment",
+      "data",
+      "trust",
+      "fraud",
+      "protected",
+      "encryption"
+    ]
+  },
+  "faq_016": {
+    "category": "delivery",
+    "question": "Delivery አካባቢ ምን ያህል ነው?",
+    "answer": "በአሁኑ ጊዜ በአዲስ አበባ ውስጥ ለሁሉም ደንበኞቻችን ደስ ብሎን እናደርሳለን! 🏠 ሌሎች ክልሎች በቅርቡ ይታከላሉ — ይጠብቁን!",
+    "keywords": [
+      "delivery",
+      "area",
+      "አካባቢ",
+      "አዲስ አበባ",
+      "region",
+      "location",
+      "የት ድረስ",
+      "ክልል",
+      "ከአዲስ አበባ ውጭ"
+    ],
+    "question_en": "What areas do you deliver to?",
+    "answer_en": "Right now, we happily deliver throughout Addis Ababa! 🏠 Other regions are coming soon — stay tuned, we're expanding for you!",
+    "keywords_en": [
+      "delivery",
+      "area",
+      "addis",
+      "region",
+      "location",
+      "where",
+      "which cities",
+      "outside addis",
+      "expand"
+    ]
+  },
+  "faq_017": {
+    "category": "delivery",
+    "question": "Delivery ዋጋ ስንት ነው?",
+    "answer": "Delivery ዋጋ በትዕዛዝ ጊዜ በትክክል ይታይልዎታል — እንደ አካባቢ እና ምርት ይለያያል፣ ምንም የተደበቀ ክፍያ የለም! 😊",
+    "keywords": [
+      "delivery fee",
+      "ዋጋ",
+      "shipping cost",
+      "ምን ያህል",
+      "ተጨማሪ ክፍያ",
+      "delivery charge"
+    ],
+    "question_en": "How much is the delivery fee?",
+    "answer_en": "The delivery fee is shown clearly when you place your order — it varies by location and item, with absolutely no hidden charges! 😊",
+    "keywords_en": [
+      "delivery",
+      "fee",
+      "cost",
+      "price",
+      "shipping",
+      "extra fee",
+      "hidden cost",
+      "shipping price"
+    ]
+  },
+  "faq_018": {
+    "category": "delivery",
+    "question": "ትዕዛዝ ቤቴ ድረስ ይደርሳልን?",
+    "answer": "በፍጹም አዎ! ትዕዛዝ ሲሰጡ አድራሻዎን ብቻ ያስቀምጡ — እኛ ቤትዎ ድረስ በደህና እናደርሳለን፣ ይህ ቀላል ቃላችን ነው! 🚪📦",
+    "keywords": [
+      "home delivery",
+      "ቤት",
+      "ድረስ",
+      "doorstep",
+      "address",
+      "ቤት ድረስ",
+      "በራፍ ላይ"
+    ],
+    "question_en": "Do you deliver to my home?",
+    "answer_en": "Absolutely yes! Just enter your address when placing the order, and we'll deliver it safely right to your doorstep — that's our promise! 🚪📦",
+    "keywords_en": [
+      "home",
+      "deliver",
+      "door",
+      "address",
+      "doorstep",
+      "right to my door",
+      "doorstep delivery"
+    ]
+  },
+  "faq_019": {
+    "category": "delivery",
+    "question": "ትዕዛዝ ሊመጣ ሲል ምልክት ይሰጣልን?",
+    "answer": "አዎ፣ ሁልጊዜ እናሳውቅዎታለን! 🔔 ትዕዛዝ ሲወጣ Notification ይደርስዎታል፣ ከ'Processing' እስከ 'Delivered' ድረስ ሁሉንም ደረጃ እናሳውቅዎታለን።",
+    "keywords": [
+      "notification",
+      "ምልክት",
+      "alert",
+      "SMS",
+      "update",
+      "ያሳውቁኛል",
+      "መልዕክት ይደርሰኛል"
+    ],
+    "question_en": "Will I be notified before delivery?",
+    "answer_en": "Yes, we'll always keep you in the loop! 🔔 You'll get a notification when your order ships, and every status update from Processing through Delivered.",
+    "keywords_en": [
+      "notify",
+      "notification",
+      "alert",
+      "sms",
+      "update",
+      "delivery",
+      "keep me updated",
+      "will i be told"
+    ]
+  },
+  "faq_020": {
+    "category": "delivery",
+    "question": "ደሃ አካባቢ ነኝ ይደርሳልን?",
+    "answer": "ብዙ የአዲስ አበባ አካባቢዎችን ደስ ብሎን ሸፍነናል! 🗺️ ትዕዛዝ ሲሰጡ አድራሻዎን ያስቀምጡ — እርግጠኛ ካልሆኑ የደንበኞች አገልግሎታችንን ያግኙ፣ እንረዳዎታለን!",
+    "keywords": [
+      "area",
+      "አካባቢ",
+      "ይደርሳል",
+      "coverage",
+      "ይሸፍናል",
+      "ሰፈር",
+      "ክልሌ"
+    ],
+    "question_en": "Do you deliver to my neighborhood?",
+    "answer_en": "We happily cover most areas of Addis Ababa! 🗺️ Just enter your address when ordering — if you're not sure, reach out to our Customer Support and we'll help you out!",
+    "keywords_en": [
+      "neighborhood",
+      "area",
+      "coverage",
+      "zone",
+      "deliver",
+      "covered area",
+      "my neighborhood"
+    ]
+  },
+  "faq_021": {
+    "category": "delivery",
+    "question": "ትዕዛዝ ለምን ዘገየ?",
+    "answer": "ይቅርታ ስለዚህ መዘግየት! 🙏 ትዕዛዝ ከ3 የሥራ ቀናት ካለፈ የደንበኞች አገልግሎታችንን ያነጋግሩ — ጉዳዩን በፍጥነት እንከታተልልዎታለን።",
+    "keywords": [
+      "ዘገየ",
+      "delayed",
+      "late",
+      "ዘግይቷ",
+      "አልደረሰ",
+      "የት ቀረ",
+      "ችላ ብላችሁኝ"
+    ],
+    "question_en": "Why is my delivery delayed?",
+    "answer_en": "We apologize for the delay! 🙏 If it's been more than 3 business days, please contact our Customer Support and we'll look into it for you right away.",
+    "keywords_en": [
+      "delayed",
+      "late",
+      "slow",
+      "not arrived",
+      "delivery",
+      "hasnt arrived",
+      "where is it",
+      "taking forever"
+    ]
+  },
+  "faq_022": {
+    "category": "products",
+    "question": "ምርቶቹ ዋስትና (Warranty) አላቸው?",
+    "answer": "ምርቱ ላይ ዋስትና ካለ በግልጽ ይታይዎታል! 🛡️ ምርት ሲደርስ የምርት ዝርዝሩን ቆም ብለው ያንቡ — ለማንኛውም ጥያቄ እኛ እዚህ ነን!",
+    "keywords": [
+      "warranty",
+      "ዋስትና",
+      "guarantee",
+      "የጥራት ማረጋገጫ",
+      "ጉዳት ካለ"
+    ],
+    "question_en": "Do products come with a warranty?",
+    "answer_en": "If a product comes with a warranty, it's clearly shown on the page! 🛡️ Take a moment to check the product details when it arrives — we're here for any questions!",
+    "keywords_en": [
+      "warranty",
+      "guarantee",
+      "defect",
+      "product",
+      "guarantee period",
+      "covered defect"
+    ]
+  },
+  "faq_023": {
+    "category": "products",
+    "question": "ምርቱ ኦሪጅናል ነው?",
+    "answer": "በሙሉ ልብ ይተማመኑ! ✅ ምርቶቻችን ሁሉ ከተረጋገጡ አቅራቢዎች ብቻ ነው የምናመጣው። ምርት ላይ ያለውን 'Condition' ዝርዝር ቆም ብለው ያንቡ።",
+    "keywords": [
+      "original",
+      "ኦሪጅናል",
+      "genuine",
+      "authentic",
+      "condition",
+      "እውነተኛ",
+      "ቅጂ",
+      "ኦርጅናል ነው"
+    ],
+    "question_en": "Are your products original/authentic?",
+    "answer_en": "Rest assured! ✅ All our products come exclusively from verified suppliers. Be sure to check the 'Condition' section on each product page.",
+    "keywords_en": [
+      "original",
+      "genuine",
+      "authentic",
+      "quality",
+      "real",
+      "fake",
+      "counterfeit",
+      "real product"
+    ]
+  },
+  "faq_024": {
+    "category": "products",
+    "question": "ምርቱ Stock ውስጥ አለ?",
+    "answer": "በቀላሉ ማወቅ ይችላሉ! 'Add to Cart' ቁልፍ ካለ ክምችት ዝግጁ ነው ማለት ነው። 'Out of Stock' ቢል ብቻ ጊዜያዊ ነው — ትንሽ ቆይተው እንደገና ይሞክሩ!",
+    "keywords": [
+      "stock",
+      "available",
+      "out of stock",
+      "ክምችት",
+      "አለ",
+      "አለ ወይ",
+      "ይገኛል"
+    ],
+    "question_en": "Is this product in stock?",
+    "answer_en": "Easy to tell! If the 'Add to Cart' button is showing, it's in stock and ready to go. 'Out of Stock' just means temporarily unavailable — check back soon!",
+    "keywords_en": [
+      "stock",
+      "available",
+      "in stock",
+      "out of stock",
+      "inventory",
+      "is it available",
+      "do you have"
+    ]
+  },
+  "faq_025": {
+    "category": "products",
+    "question": "ምርቱ ዋጋ ይቀነሳልን?",
+    "answer": "ዋጋ ወቅታዊ ሆኖ ይቀጥላል 💰 ምርቱን Favorites ውስጥ ቢያስቀምጡ ግን ቅናሽ ሲመጣ መጀመሪያ እርስዎ ያውቃሉ! ይህ ትንሽ ምስጢራችን ነው 😉",
+    "keywords": [
+      "price",
+      "ዋጋ",
+      "discount",
+      "ቅናሽ",
+      "offer",
+      "ይቀንሳል ወይ",
+      "ቅናሽ ይመጣ"
+    ],
+    "question_en": "Will the product price go down?",
+    "answer_en": "Prices stay current 💰 but if you save the item to Favorites, you'll be the first to know when a discount comes along! That's our little secret 😉",
+    "keywords_en": [
+      "price",
+      "discount",
+      "offer",
+      "sale",
+      "cheaper",
+      "will it go on sale",
+      "lower price"
+    ]
+  },
+  "faq_026": {
+    "category": "products",
+    "question": "ምርቱ ስዕሉ ከደረሰው ጋር ይለያያልን?",
+    "answer": "የምርቶቻችን ፎቶ ትክክለኛ መሆኑን እናረጋግጣለን! 📸 ካልሆነ ግን ይቅርታ — ወዲያው የደንበኞች አገልግሎታችንን ያግኙ፣ ለእርስዎ እናስተካክለዋለን።",
+    "keywords": [
+      "photo",
+      "ምስል",
+      "ይለያያ",
+      "different",
+      "color",
+      "ቀለም",
+      "አይመስልም",
+      "ልዩ ነው"
+    ],
+    "question_en": "Does the product look different from the photo?",
+    "answer_en": "We make sure our product photos are accurate! 📸 But if something looks off, we're sorry — reach out to our Customer Support right away and we'll set things right for you.",
+    "keywords_en": [
+      "photo",
+      "image",
+      "different",
+      "color",
+      "look",
+      "appearance",
+      "looks wrong",
+      "not matching photo"
+    ]
+  },
+  "faq_027": {
+    "category": "products",
+    "question": "ምርትን እንዴት ይፈለጋል?",
+    "answer": "ቀላል ነው! 🔍 ከላይ ያለውን Search ቁልፍ ይጫኑ ወይም Category ይምረጡ — የፈለጉትን ምርት በፍጥነት ያገኛሉ!",
+    "keywords": [
+      "search",
+      "ፈልግ",
+      "find",
+      "ምርት",
+      "category",
+      "ፍለጋ",
+      "የት ላገኝ"
+    ],
+    "question_en": "How do I search for a product?",
+    "answer_en": "Quick and easy! 🔍 Tap the Search button at the top, or browse by category — you'll find what you're looking for in no time!",
+    "keywords_en": [
+      "search",
+      "find",
+      "product",
+      "browse",
+      "category",
+      "look",
+      "look for",
+      "where can i find"
+    ]
+  },
+  "faq_028": {
+    "category": "products",
+    "question": "ምርቱ ምን ምን ቀለሞች አሉት?",
+    "answer": "ብዙ ቀለም አማራጮች አሉ! 🎨 ምርቱን ሲከፍቱ 'Colors' ክፍል ስር ያሉትን ይመልከቱ እና የሚስማማዎትን ይምረጡ።",
+    "keywords": [
+      "color",
+      "ቀለም",
+      "colors",
+      "variants",
+      "ያለው ቀለም",
+      "ምን ምን አለ"
+    ],
+    "question_en": "What colors does this product come in?",
+    "answer_en": "There are plenty of color options! 🎨 Open the product page and check the 'Colors' section to see and pick the one you love.",
+    "keywords_en": [
+      "color",
+      "colours",
+      "variants",
+      "options",
+      "choose",
+      "available colors",
+      "what colors"
+    ]
+  },
+  "faq_029": {
+    "category": "cart",
+    "question": "ጋሪ (Cart) ውስጥ ምርቶቼ ጠፉ",
+    "answer": "ይቅርታ ስለዚህ! ጋሪ ምርቶች Browser Cache ላይ ይቀመጣሉ — Cache ቢጸዳ ሊጠፋ ይችላል። ምንም አይደለም፣ ዳግም ይጨምሩ እና እንቀጥል! 😊",
+    "keywords": [
+      "cart",
+      "ጋሪ",
+      "ጠፉ",
+      "empty",
+      "disappeared",
+      "የለም ጋሪ ውስጥ",
+      "ምርቶቼ የት ሄዱ"
+    ],
+    "question_en": "My cart items disappeared",
+    "answer_en": "Sorry about that! Cart items are stored in your browser cache, so clearing it can remove them. No worries — just add them again and we're good to go! 😊",
+    "keywords_en": [
+      "cart",
+      "empty",
+      "disappeared",
+      "items",
+      "lost",
+      "where did they go",
+      "vanished",
+      "missing items"
+    ]
+  },
+  "faq_030": {
+    "category": "cart",
+    "question": "ምርት ወደ ጋሪ ለምን አልተጨመረም?",
+    "answer": "ምንም አይጨነቁ፣ እንፍታው! 1️⃣ ምርቱ Stock ውስጥ መኖሩን ያረጋግጡ 2️⃣ Account ውስጥ መግባትዎን ያረጋግጡ። ይህ ካልሰራ ያነጋግሩን!",
+    "keywords": [
+      "add to cart",
+      "አልተጨመረ",
+      "cart",
+      "ጋሪ",
+      "አይሰራም",
+      "ቁልፉ አይነካ"
+    ],
+    "question_en": "Why can't I add the item to my cart?",
+    "answer_en": "Let's figure this out together! 1️⃣ Check the product is in stock. 2️⃣ Make sure you're logged into your account. Still stuck? Just reach out to us!",
+    "keywords_en": [
+      "add",
+      "cart",
+      "cannot",
+      "button",
+      "stock",
+      "login",
+      "button not working",
+      "cant click"
+    ]
+  },
+  "faq_031": {
+    "category": "cart",
+    "question": "ከጋሪ ምርት እንዴት ይወጣል?",
+    "answer": "ቀላል ነው! ጋሪ ውስጥ ሄደው ምርቱ ጎን ያለውን ❌ ወይም '−' ቁልፍ ይጫኑ — በፍጥነት ይወገዳል። 😊",
+    "keywords": [
+      "remove",
+      "delete",
+      "ጋሪ",
+      "አውጣ",
+      "cart remove",
+      "አስወግድ",
+      "ማስወገድ"
+    ],
+    "question_en": "How do I remove an item from my cart?",
+    "answer_en": "Simple! Go to your Cart and tap the ❌ or '−' button next to the item — it'll be removed in a snap. 😊",
+    "keywords_en": [
+      "remove",
+      "delete",
+      "cart",
+      "item",
+      "minus",
+      "take out",
+      "remove item"
+    ]
+  },
+  "faq_032": {
+    "category": "security",
+    "question": "Account ሌላ ሰው ሊጠቀምበት ይችላልን?",
+    "answer": "የእርስዎ ደህንነት ለኛ ቅድሚያ ነው! 🔐 Account ዎ በOTP ብቻ የተቆለፈ ነው — ስልክዎን ይጠብቁ። ስጋት ቢሰማዎት የደንበኞች አገልግሎታችንን ያግኙ፣ በፍጥነት እንረዳዎታለን።",
+    "keywords": [
+      "security",
+      "ደህንነት",
+      "access",
+      "hacked",
+      "stolen",
+      "ሌላ ሰው ገብቷል",
+      "ተገብቷል"
+    ],
+    "question_en": "Can someone else access my account?",
+    "answer_en": "Your security matters most to us! 🔐 Your account is locked behind OTP — just keep your phone safe. If anything feels off, contact our Customer Support and we'll help right away.",
+    "keywords_en": [
+      "security",
+      "access",
+      "hacked",
+      "unauthorized",
+      "protect",
+      "someone logged in",
+      "suspicious activity"
+    ]
+  },
+  "faq_033": {
+    "category": "security",
+    "question": "የክፍያ መረጃዬ ደህንነቱ የተጠበቀ ነው?",
+    "answer": "ሙሉ በሙሉ ደህና ነው፣ ያለ ምንም ስጋት! 🔒 ክፍያ ቀጥታ ወደ Bank ብቻ ነው የሚሄደው — የካርድ ወይም Bank ዝርዝርዎ በፍጹም ከኛ ጋር አይቀመጥም።",
+    "keywords": [
+      "secure",
+      "safety",
+      "data",
+      "bank",
+      "ደህንነት",
+      "payment security",
+      "መረጃ ደህንነት",
+      "ካርድ ይቀመጣል ወይ"
+    ],
+    "question_en": "Is my payment information secure?",
+    "answer_en": "Completely safe, no need to worry! 🔒 Payments go directly to the bank — we never, ever store your card or bank details.",
+    "keywords_en": [
+      "secure",
+      "safe",
+      "payment",
+      "bank",
+      "data",
+      "privacy",
+      "data privacy",
+      "card stored"
+    ]
+  },
+  "faq_034": {
+    "category": "general",
+    "question": "ፓስዎርድ ጠፋብኝ እንዴት ላድስ?",
+    "answer": "ምንም አይጨነቁ — የእውን ህልም አፕ ፓስዎርድ አያስፈልገውም! 😊 OTP (ስልክ ቁጥር) ብቻ ይጠቀማል፣ ስልክ ቁጥርዎን ያስገቡ እና OTP ይምጣልዎ።",
+    "keywords": [
+      "password",
+      "ፓስዎርድ",
+      "ጠፋ",
+      "forgot",
+      "reset",
+      "OTP",
+      "ኮድ ጠፋ",
+      "ግባት ችግር"
+    ],
+    "question_en": "I forgot my password — how do I reset it?",
+    "answer_en": "No need to worry — Ewn Hlm doesn't even use passwords! 😊 We use OTP only — just enter your phone number and receive a one-time code.",
+    "keywords_en": [
+      "password",
+      "forgot",
+      "reset",
+      "otp",
+      "login",
+      "cant login",
+      "lost access"
+    ]
+  },
+  "faq_035": {
+    "category": "general",
+    "question": "OTP አልደረሰኝም",
+    "answer": "ችላ አይበሉ፣ ትንሽ ይታገሱ! ⏱️ OTP ለመድረስ 1-2 ደቂቃ ይጠብቁ። SMS ካልደረሰ ስልኩ ምልክት እንዳለው ያረጋግጡ ወይም ዳግም ይሞክሩ — እኛም እዚህ ነን ካስፈለገ!",
+    "keywords": [
+      "OTP",
+      "አልደረሰ",
+      "SMS",
+      "code",
+      "verification",
+      "ኮድ አልመጣ",
+      "መልዕክት የለም"
+    ],
+    "question_en": "I didn't receive my OTP",
+    "answer_en": "Just hang in there a moment! ⏱️ Wait 1-2 minutes for the OTP. If it still doesn't arrive, check your signal and try again — we're here if you need more help!",
+    "keywords_en": [
+      "otp",
+      "sms",
+      "code",
+      "not received",
+      "verification",
+      "login",
+      "code missing",
+      "no sms received"
+    ]
+  },
+  "faq_036": {
+    "category": "general",
+    "question": "መለያዬን (Account) እንዴት ማስተካከል ይቻላል?",
+    "answer": "በቀላሉ ማስተካከል ይችላሉ! Profile → መገለጫ ሄደው ስምዎን ወይም አድራሻዎን ማደስ ይችላሉ — የእርስዎ መረጃ የእርስዎ ብቻ ነው! 😊",
+    "keywords": [
+      "account",
+      "profile",
+      "edit",
+      "አስተካክል",
+      "ስም",
+      "አድራሻ",
+      "መረጃ ቀይር",
+      "ስም ቀይር"
+    ],
+    "question_en": "How do I edit my account details?",
+    "answer_en": "Easy to update! Go to Profile → Edit Profile to refresh your name or address — your info, your control! 😊",
+    "keywords_en": [
+      "account",
+      "profile",
+      "edit",
+      "update",
+      "name",
+      "address",
+      "update info",
+      "change name"
+    ]
+  },
+  "faq_037": {
+    "category": "general",
+    "question": "ከ account ሳወጣ ትዕዛዞቼ ይጠፋሉ?",
+    "answer": "በፍጹም አይጠፉም! 🔒 ትዕዛዞችዎ በደመና (Cloud) ላይ በደህና ተቀምጠዋል። ዳግም ሲገቡ ሁሉም ታሪክዎ ልክ እንደነበረው ይታያል!",
+    "keywords": [
+      "logout",
+      "ወጥቼ",
+      "ይጠፋ",
+      "data",
+      "orders",
+      "ይጠፋ ወይ ታሪክ",
+      "ወጣ"
+    ],
+    "question_en": "Will my orders disappear if I log out?",
+    "answer_en": "They will absolutely not disappear! 🔒 Your orders are safely stored in the cloud. When you log back in, your full history will be right there waiting for you!",
+    "keywords_en": [
+      "logout",
+      "sign out",
+      "orders",
+      "disappear",
+      "data",
+      "lost history",
+      "logged out"
+    ]
+  },
+  "faq_038": {
+    "category": "general",
+    "question": "ስልኬን ቀየርኩ — account ይጠፋልን?",
+    "answer": "ስልክ ቁጥርዎ ቀየሩ? ምንም ችግር የለውም — አዲሱን ቁጥር ይግቡ! ብቻ ያስታውሱ፣ ታሪክ በራስ-ሰር አይዛወርም ስለዚህ የደንበኞች አገልግሎታችንን ያግኙ እና በደስታ እናስተላልፍልዎታለን።",
+    "keywords": [
+      "ስልክ",
+      "ቀየርኩ",
+      "phone",
+      "change",
+      "number",
+      "ስልክ ለወጠ",
+      "ቁጥር ለወጠ"
+    ],
+    "question_en": "I changed my phone number — will my account be lost?",
+    "answer_en": "Changed your phone number? No problem — just log in with the new one! Just keep in mind, order history won't transfer automatically, so contact our Customer Support and we'll happily move it over for you.",
+    "keywords_en": [
+      "phone",
+      "change",
+      "number",
+      "account",
+      "new phone",
+      "new number",
+      "switched phone"
+    ]
+  },
+  "faq_039": {
+    "category": "general",
+    "question": "Account ዘጋሁ ወይም ሰረዝኩ ምን ይሆናል?",
+    "answer": "ይቅርታ ስለሚለዩን! 💔 Account ለመሰረዝ የደንበኞች አገልግሎታችንን ያነጋግሩ — ቅድሚያ ይህን ውሳኔ በደንብ ያስቡበት፣ ምክንያቱም ሁሉም መረጃ (ቀደም ያሉ ትዕዛዞች ጨምሮ) ይጠፋል።",
+    "keywords": [
+      "delete account",
+      "ሰርዝ",
+      "close account",
+      "deactivate",
+      "ለቅቅ",
+      "ማቆም"
+    ],
+    "question_en": "What happens if I delete my account?",
+    "answer_en": "Sorry to see you go! 💔 To delete your account, contact our Customer Support — just know that all data, including past orders, will be permanently removed, so take your time deciding.",
+    "keywords_en": [
+      "delete",
+      "account",
+      "close",
+      "remove",
+      "deactivate",
+      "leave",
+      "quit",
+      "stop using"
+    ]
+  },
+  "faq_040": {
+    "category": "general",
+    "question": "መተግበሪያው ሳይሠራ ቀረ ምን ላድርግ?",
+    "answer": "ምንም አይጨነቁ፣ አብረን እንፍታው! 1️⃣ መተግበሪያውን ዝጋና ዳግም ይክፈቱ 2️⃣ ስልኩን Restart ያድርጉ 3️⃣ ካልሰራ Cache ጽዳ ወይም ዳግም install ያድርጉ — እኛም ካስፈለገ እዚህ ነን!",
+    "keywords": [
+      "app",
+      "አይሠራ",
+      "crash",
+      "problem",
+      "ችግር",
+      "ሳይሠራ",
+      "ሳይከፈት",
+      "ችግር ገጥሞኛል"
+    ],
+    "question_en": "The app is not working — what should I do?",
+    "answer_en": "Don't worry, let's sort it out together! 1️⃣ Close and reopen the app. 2️⃣ Restart your phone. 3️⃣ If it still won't work, clear cache or reinstall — and we're here if you need more help!",
+    "keywords_en": [
+      "app",
+      "not working",
+      "crash",
+      "broken",
+      "problem",
+      "fix",
+      "wont open",
+      "stuck loading app"
+    ]
+  },
+  "faq_041": {
+    "category": "general",
+    "question": "ምርቶች አይጫኑም (loading)",
+    "answer": "በቀላሉ መፍታት ይቻላል! 1️⃣ Internet ምልክት ያረጋግጡ 2️⃣ አፕ ዝጋ ዳግም ይክፈቱ 3️⃣ ካልሰራ ዳግም install ያድርጉ — ብዙም ሳይቆይ መልካም ይሆናል! 😊",
+    "keywords": [
+      "loading",
+      "አይጫን",
+      "ምርቶች",
+      "products",
+      "internet",
+      "አይታይም",
+      "ዝግተኛ"
+    ],
+    "question_en": "Products are not loading",
+    "answer_en": "Quick fix! 1️⃣ Check your internet connection. 2️⃣ Close and reopen the app. 3️⃣ If that doesn't help, reinstall — it'll be smooth sailing again soon! 😊",
+    "keywords_en": [
+      "loading",
+      "not loading",
+      "products",
+      "slow",
+      "internet",
+      "not showing",
+      "slow loading"
+    ]
+  },
+  "faq_042": {
+    "category": "general",
+    "question": "መተግበሪያውን እንዴት ወደ ስልኬ መጫን ይቻላል?",
+    "answer": "በፍጥነት ይጫናል! 📲 Profile → 'Install App' ቁልፍ ይጫኑ፣ Browser ውስጥ 'Add to Home Screen' ይምረጡ — እና አፕዎ ልክ እንደ ሌላ app በስልክዎ ላይ ይታያል!",
+    "keywords": [
+      "install",
+      "download",
+      "ጫን",
+      "home screen",
+      "PWA",
+      "ጫን ስልኬ",
+      "icon"
+    ],
+    "question_en": "How do I install the app on my phone?",
+    "answer_en": "Quick to install! 📲 Go to Profile → tap 'Install App', then in your browser choose 'Add to Home Screen' — and just like that, it's on your phone like any other app!",
+    "keywords_en": [
+      "install",
+      "download",
+      "add",
+      "home screen",
+      "PWA",
+      "app",
+      "add icon",
+      "shortcut"
+    ]
+  },
+  "faq_043": {
+    "category": "general",
+    "question": "Notification አልደርሰኝም",
+    "answer": "ቀላል ችግር ነው፣ እንፍታው! 1️⃣ Browser/Phone Notification ፈቅዱ 2️⃣ Profile → Notifications ላይ ሄደው ተፈቅዷል ወይ ያረጋግጡ — ከዚያ ምንም አይዘልልዎትም! 🔔",
+    "keywords": [
+      "notification",
+      "ማሳወቂያ",
+      "alert",
+      "push",
+      "አያሳውቅም",
+      "ደወል"
+    ],
+    "question_en": "I'm not receiving notifications",
+    "answer_en": "Easy fix! 1️⃣ Allow notifications in your browser/phone settings. 2️⃣ Check Profile → Notifications is enabled — and you won't miss a thing from now on! 🔔",
+    "keywords_en": [
+      "notification",
+      "push",
+      "alert",
+      "not receiving",
+      "enable",
+      "bell icon",
+      "no alerts"
+    ]
+  },
+  "faq_044": {
+    "category": "general",
+    "question": "ቋንቋ (Language) እንዴት ይቀየራል?",
+    "answer": "በቀላሉ ይቀየራል! Profile → Language ሄደው አማርኛ ወይም English ይምረጡ — የእርስዎ ቋንቋ የእርስዎ ምርጫ ነው! 🌐",
+    "keywords": [
+      "language",
+      "ቋንቋ",
+      "አማርኛ",
+      "english",
+      "change language",
+      "ቋንቋ ቀይር",
+      "english አርግ"
+    ],
+    "question_en": "How do I change the language?",
+    "answer_en": "Quick to switch! Go to Profile → Language and choose Amharic or English — your language, your choice! 🌐",
+    "keywords_en": [
+      "language",
+      "amharic",
+      "english",
+      "change",
+      "setting",
+      "switch to amharic",
+      "switch to english"
+    ]
+  },
+  "faq_045": {
+    "category": "general",
+    "question": "Dark Mode እንዴት ማብራት ይቻላል?",
+    "answer": "በቀላሉ ያበራል! 🌙 Profile → Theme ሄደው Dark Mode ቁልፉን ያብሩ — ምሽት ላይ ዓይንዎ ያርፋል!",
+    "keywords": [
+      "dark mode",
+      "theme",
+      "ጨለማ",
+      "light",
+      "ጥቁር ገጽ",
+      "ብርሃን ቀለም"
+    ],
+    "question_en": "How do I enable Dark Mode?",
+    "answer_en": "Quick to turn on! 🌙 Go to Profile → Theme and toggle on Dark Mode — easy on the eyes at night!",
+    "keywords_en": [
+      "dark mode",
+      "theme",
+      "dark",
+      "light",
+      "toggle",
+      "night mode",
+      "screen color"
+    ]
+  },
+  "faq_046": {
+    "category": "general",
+    "question": "Refer & Earn እንዴት ይሠራል?",
+    "answer": "ይህን ይወዱታል! 🎁 Profile → Refer & Earn ሄደው Referral Code ቅዱ፣ ለወዳጆችዎ ያጋሩ — ሁለታችሁም ሽልማት ታገኛላችሁ! ወዳጅነት ይክፋል!",
+    "keywords": [
+      "refer",
+      "earn",
+      "referral",
+      "reward",
+      "bonus",
+      "ሽልማት",
+      "ኮድ አግኝ",
+      "ጓደኛ ጋብዝ"
+    ],
+    "question_en": "How does Refer & Earn work?",
+    "answer_en": "You'll love this one! 🎁 Go to Profile → Refer & Earn, copy your referral code, and share it with friends — you both get rewarded! Sharing really does pay off!",
+    "keywords_en": [
+      "refer",
+      "earn",
+      "referral",
+      "code",
+      "reward",
+      "friend",
+      "share",
+      "invite friend",
+      "get code"
+    ]
+  },
+  "faq_047": {
+    "category": "general",
+    "question": "የምወዳቸውን ምርቶች (Favorites) የት ይታያሉ?",
+    "answer": "በቀላሉ ያገኙታል! ❤️ ከላይ ያለውን ቁልፍ ይጫኑ ወይም ምርት ላይ ❤️ ይጫኑ — የወደዱትን ሁሉ Favorites ዝርዝርዎ ላይ ደህና ያስቀምጧቸዋል!",
+    "keywords": [
+      "favorites",
+      "likes",
+      "ወደድኩ",
+      "❤️",
+      "wishlist",
+      "ወደድኩት ምርት",
+      "ቆልፍ ልብ"
+    ],
+    "question_en": "Where can I see my favorite products?",
+    "answer_en": "Right at your fingertips! ❤️ Tap the heart icon at the top, or tap ❤️ on any product to save it — everything you love is kept safe in your Favorites list!",
+    "keywords_en": [
+      "favorites",
+      "wishlist",
+      "liked",
+      "saved",
+      "heart",
+      "save item",
+      "heart icon"
+    ]
+  },
+  "faq_048": {
+    "category": "general",
+    "question": "Ewn Hlm ማን ነው?",
+    "answer": "እውን ህልም (Ewn Hlm) የኢትዮጵያ Digital Marketplace ነው — ሕልምዎ እውን የሚሆንበት ቦታ! 🛍️ ለእያንዳንዱ ደንበኛችን በፍቅር እና በትህትና ለማገልገል ቆርጠናል!",
+    "keywords": [
+      "about",
+      "ማን",
+      "Ewn Hlm",
+      "እውን ህልም",
+      "company",
+      "ምን ነው",
+      "ስለ እናንተ"
+    ],
+    "question_en": "What is Ewn Hlm?",
+    "answer_en": "Ewn Hlm is Ethiopia's Digital Marketplace — where your dreams become reality! 🛍️ We're committed to serving every single customer with warmth and respect!",
+    "keywords_en": [
+      "about",
+      "ewn",
+      "hlm",
+      "what is",
+      "company",
+      "ethiopia",
+      "who are you",
+      "tell me about"
+    ]
+  },
+  "faq_049": {
+    "category": "general",
+    "question": "Ewn Hlm ለ Seller ምርት መሸጥ ይቻላል?",
+    "answer": "ገና ለ Seller ክፈት አልሆነም፣ ግን ብዙ የሚያምር ነገር ይዘን እንመጣለን! 🌟 Notification ይከታተሉ — ሲከፈት መጀመሪያ የእርስዎ ጋር ይነገራል!",
+    "keywords": [
+      "sell",
+      "seller",
+      "vendor",
+      "መሸጥ",
+      "business",
+      "ምርት መሸጥ እፈልጋለሁ",
+      "ቦታ ይከራይ"
+    ],
+    "question_en": "Can I sell products on Ewn Hlm?",
+    "answer_en": "Seller registration isn't open just yet, but exciting things are coming! 🌟 Keep an eye on your notifications — you'll be among the first to know when it opens!",
+    "keywords_en": [
+      "sell",
+      "seller",
+      "vendor",
+      "business",
+      "shop",
+      "start selling",
+      "become vendor"
+    ]
+  },
+  "faq_050": {
+    "category": "general",
+    "question": "Ewn Hlm ን እንዴት ያግኙ?",
+    "answer": "በደስታ! 😊 🌐 ewn-hlm.web.app • Profile → Help Center • ኢሜይል: dannniefx55@gmail.com — እኛ ሁልጊዜ ለእርስዎ እዚህ ነን!",
+    "keywords": [
+      "contact",
+      "አግኙ",
+      "reach",
+      "email",
+      "website",
+      "ስልክ ቁጥርዎ",
+      "ኢሜይል"
+    ],
+    "question_en": "How do I contact Ewn Hlm?",
+    "answer_en": "Happy to help! 😊 🌐 ewn-hlm.web.app • Profile → Help Center • Email: dannniefx55@gmail.com — we're always here for you!",
+    "keywords_en": [
+      "contact",
+      "email",
+      "website",
+      "reach",
+      "support",
+      "phone number",
+      "email address"
+    ]
+  }
+}

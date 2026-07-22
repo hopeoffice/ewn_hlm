@@ -6,7 +6,7 @@ import 'state/app_state.dart';
 import 'services/storage_service.dart';
 import 'services/push_service.dart';
 import 'theme/app_theme.dart';
-import 'widgets/root_scaffold.dart';
+import 'widgets/splash_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,12 +40,15 @@ class EwnHlmApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => AppState()..bootstrap(),
-      child: MaterialApp(
-        title: 'Ewn Hlm',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        home: const RootScaffold(),
+      child: Consumer<AppState>(
+        builder: (context, app, _) => MaterialApp(
+          title: 'Ewn Hlm',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: app.themeMode,
+          home: const SplashGate(),
+        ),
       ),
     );
   }

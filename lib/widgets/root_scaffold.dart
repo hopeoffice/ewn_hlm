@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../l10n/strings.dart';
 import '../screens/home_screen.dart';
 import '../screens/cart_screen.dart';
 import '../screens/orders_screen.dart';
@@ -20,15 +21,16 @@ class _RootScaffoldState extends State<RootScaffold> {
   final _screens = const [HomeScreen(), CartScreen(), OrdersScreen(), ProfileScreen()];
 
   static const _tabs = [
-    (emoji: '🏠', label: 'መነሻ'),
-    (emoji: '🛒', label: 'ጋሪ'),
-    (emoji: '📦', label: 'ትዕዛዞች'),
-    (emoji: '👤', label: 'መገለጫ'),
+    (emoji: '🏠', key: 'home'),
+    (emoji: '🛒', key: 'cart'),
+    (emoji: '📦', key: 'orders'),
+    (emoji: '👤', key: 'profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final cartCount = context.watch<AppState>().cartCount;
+    final app = context.watch<AppState>();
+    final cartCount = app.cartCount;
 
     return Scaffold(
       backgroundColor: AppTheme.brand,
@@ -74,7 +76,7 @@ class _RootScaffoldState extends State<RootScaffold> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(tab.label,
+                      Text(S.t(tab.key, app.lang),
                           style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,

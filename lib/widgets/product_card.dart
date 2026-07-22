@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../l10n/strings.dart';
 
 /// Ported from .product-card / .product-img-wrap / .stock-badge /
 /// .like-btn / .product-price in style.css.
@@ -54,14 +55,14 @@ class ProductCard extends StatelessWidget {
                     Positioned(
                       top: 8,
                       left: 8,
-                      child: _Badge(text: 'ቅናሽ', bg: AppTheme.accent, fg: Colors.white),
+                      child: _Badge(text: S.t('discounted', app.lang), bg: AppTheme.accent, fg: Colors.white),
                     ),
                   // .stock-badge.out — bottom-left, out-of-stock
                   if (product.outOfStock)
-                    const Positioned(
+                    Positioned(
                       bottom: 8,
                       left: 8,
-                      child: _Badge(text: 'ተሽጦ አልቋል', bg: Color(0xFFFFE0E0), fg: Color(0xFFC62828)),
+                      child: _Badge(text: S.t('out_of_stock', app.lang), bg: const Color(0xFFFFE0E0), fg: const Color(0xFFC62828)),
                     ),
                   // .like-btn — top-right circular button
                   Positioned(
@@ -94,7 +95,7 @@ class ProductCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      product.name,
+                      product.displayName(app.lang),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary, height: 1.4),
@@ -105,10 +106,10 @@ class ProductCard extends StatelessWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 6,
                         children: [
-                          Text('${product.displayPrice.toStringAsFixed(0)} ብር',
+                          Text(S.formatPrice(product.displayPrice, app.lang),
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.brand)),
                           if (hasDiscount)
-                            Text('${product.price.toStringAsFixed(0)} ብር',
+                            Text(S.formatPrice(product.price, app.lang),
                                 style: const TextStyle(
                                     decoration: TextDecoration.lineThrough,
                                     color: AppTheme.textSecondary,

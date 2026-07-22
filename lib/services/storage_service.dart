@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/cart_item.dart';
 import '../models/product.dart';
 import '../models/user_model.dart';
+import '../models/category.dart';
 
 /// Step 4 of the migration plan — two tiers, exactly matching what the
 /// live app already does (verified in main-config.js / main-coins.js):
@@ -104,6 +105,29 @@ class StorageService {
     if (raw == null) return [];
     final list = (jsonDecode(raw as String) as List).cast<Map<String, dynamic>>();
     return list.map((m) => Product.fromMap(m['id'] as String, m)).toList();
+  }
+
+  // ---------------- B) Categories offline fallback cache ----------------
+  // Mirrors CATEGORIES_CACHE_KEY / _applyCachedCategoriesIfAny() in
+  // main-config.js — no expiry check, only ever read when the live
+  // Realtime DB read at settings/categories fails or returns empty.
+
+  static Future<void> cacheCategories(List<AppCategory> categories) async {
+    // "all" is never persisted — it's re-added at the front on every read,
+    // same as the web app.
+    final withoutAll = categories.where((c) => c.id != 'all').toList();
+    await _box.put(
+      'ewn_categories_cache',
+      jsonEncode(withoutAll.map((c) => c.toCacheMap()).toList()),
+    );
+  }
+
+  static List<AppCategory>? loadCachedCategories() {
+    final raw = _box.get('ewn_categories_cache');
+    if (raw == null) return null;
+    final list = (jsonDecode(raw as String) as List).cast<Map<String, dynamic>>();
+    if (list.isEmpty) return null;
+    return [kAllCategory, ...list.map((m) => AppCategory.fromMap(m))];
   }
 
   // ---------------- B) Device ID (referral fraud guard, main-coins.js) ----------------

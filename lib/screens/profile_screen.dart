@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/auth_sheet.dart';
 import 'wallet_screen.dart';
 import 'referral_screen.dart';
+import 'help_center_screen.dart';
 
 /// Ported from #screen-profile / .profile-header / .menu-list /
 /// .menu-item in index.html + style.css.
@@ -97,8 +98,14 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () => _requireAuth(context, app, () =>
                       Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen()))),
                 ),
-                _MenuItem(emoji: '🌐', title: 'ቋንቋ', sub: 'ቋንቋ ይቀይሩ', onTap: () {}),
-                _MenuItem(emoji: '🎧', title: 'የእርዳታ ማዕከል', sub: 'እርዳታ ያግኙ', onTap: () {}),
+                _MenuItem(emoji: '🌐', title: 'ቋንቋ', sub: app.lang == 'am' ? 'አማርኛ' : 'English', onTap: () => _showLanguageSheet(context, app)),
+                _MenuItem(
+                  emoji: '🎧',
+                  title: 'የእርዳታ ማዕከል',
+                  sub: 'እርዳታ ያግኙ',
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
+                ),
+                _ThemeToggleItem(app: app),
                 if (app.isAuthenticated)
                   _MenuItem(
                     emoji: '🚪',
@@ -130,6 +137,88 @@ class ProfileScreen extends StatelessWidget {
       return;
     }
     action();
+  }
+
+  void _showLanguageSheet(BuildContext context, AppState app) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('ቋንቋ ይምረጡ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            ListTile(
+              leading: const Text('🇪🇹', style: TextStyle(fontSize: 20)),
+              title: const Text('አማርኛ'),
+              trailing: app.lang == 'am' ? const Icon(Icons.check, color: AppTheme.brand) : null,
+              onTap: () {
+                app.setLanguage('am');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Text('🇬🇧', style: TextStyle(fontSize: 20)),
+              title: const Text('English'),
+              trailing: app.lang == 'en' ? const Icon(Icons.check, color: AppTheme.brand) : null,
+              onTap: () {
+                app.setLanguage('en');
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Ported from the "ቀለም ገጽታ" .menu-item + .toggle-switch in index.html.
+class _ThemeToggleItem extends StatelessWidget {
+  final AppState app;
+  const _ThemeToggleItem({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = app.themeMode == ThemeMode.dark;
+    return InkWell(
+      onTap: () => app.toggleTheme(),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(10)),
+              alignment: Alignment.center,
+              child: const Text('🌙', style: TextStyle(fontSize: 18)),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('ቀለም ገጽታ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                  SizedBox(height: 2),
+                  Text('ብርሃን / ጨለማ ቅርጸት', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                ],
+              ),
+            ),
+            Switch(
+              value: isDark,
+              activeColor: AppTheme.brand,
+              onChanged: (_) => app.toggleTheme(),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

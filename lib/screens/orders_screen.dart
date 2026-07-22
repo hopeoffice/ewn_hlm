@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../l10n/strings.dart';
 
 /// Ported from #screen-orders / .order-card / .order-status in
 /// index.html + style.css.
@@ -11,24 +12,26 @@ class OrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final lang = app.lang;
 
     return Container(
       color: AppTheme.bgMain,
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Text('📦 ትዕዛዞቼ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                Text('📦 ${S.t('orders', lang)}',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
               ],
             ),
           ),
           Expanded(
             child: !app.isAuthenticated
-                ? const _EmptyState(emoji: '🔒', title: 'እባክዎ ይግቡ', sub: 'ትዕዛዞችዎን ለማየት መጀመሪያ መለያ ውስጥ ይግቡ')
+                ? _EmptyState(emoji: '🔒', title: S.t('login_required', lang), sub: '')
                 : app.orders.isEmpty
-                    ? const _EmptyState(emoji: '📦', title: 'ምንም ትዕዛዝ የለም', sub: 'ገበያ ከጨረሱ በኋላ ትዕዛዞችዎ እዚህ ይታያሉ')
+                    ? _EmptyState(emoji: '📦', title: S.t('no_orders', lang), sub: S.t('no_orders_sub', lang))
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         itemCount: app.orders.length,
@@ -37,6 +40,7 @@ class OrdersScreen extends StatelessWidget {
                           final status = (o['status'] ?? 'pending').toString();
                           final items = (o['items'] as List?)?.cast<Map>() ?? [];
                           final itemsSummary = items.map((it) => '${it['name']} x${it['qty']}').join('፣ ');
+                          final coinsUsed = (o['coinsUsed'] as num?)?.toInt() ?? 0;
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -55,15 +59,27 @@ class OrdersScreen extends StatelessWidget {
                                   children: [
                                     Text('#${o['id']}',
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textSecondary)),
-                                    _StatusBadge(status: status),
+                                    _StatusBadge(status: status, lang: lang),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
                                 Text(itemsSummary.isEmpty ? '—' : itemsSummary,
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                                 const SizedBox(height: 4),
-                                Text('${o['total'] ?? 0} ብር',
+                                Text(S.formatPrice((o['total'] as num?) ?? 0, lang),
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.brand)),
+                                if (coinsUsed > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text('🪙 ${S.formatNumber(coinsUsed)} coin ${lang == 'am' ? 'ጥቅም ላይ ውሏል' : 'used'}',
+                                        style: const TextStyle(fontSize: 11.5, color: AppTheme.accent)),
+                                  ),
+                                if (o['paymentMethod'] != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text('${o['paymentMethod']}',
+                                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textSecondary)),
+                                  ),
                                 if (o['date'] != null) ...[
                                   const SizedBox(height: 6),
                                   Text(_formatDate(o['date'].toString()),
@@ -87,32 +103,23 @@ class OrdersScreen extends StatelessWidget {
   }
 }
 
-/// Ported from .order-status.pending/.delivered/.processing.
+/// Ported from .order-status.pending/.delivered/.processing — now uses
+/// the shared AppTheme.orderStatusColors() so this respects dark mode
+/// (was previously hardcoded to the light-mode colors only).
 class _StatusBadge extends StatelessWidget {
   final String status;
-  const _StatusBadge({required this.status});
+  final String lang;
+  const _StatusBadge({required this.status, required this.lang});
 
   @override
   Widget build(BuildContext context) {
-    late Color bg;
-    late Color fg;
-    late String label;
-    switch (status) {
-      case 'delivered':
-        bg = const Color(0xFFD1FAE5);
-        fg = const Color(0xFF065F46);
-        label = 'ደርሷል';
-        break;
-      case 'processing':
-        bg = const Color(0xFFDBEAFE);
-        fg = const Color(0xFF1E40AF);
-        label = 'በሂደት ላይ';
-        break;
-      default:
-        bg = const Color(0xFFFFF3CD);
-        fg = const Color(0xFF856404);
-        label = 'በመጠባበቅ ላይ';
-    }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final (bg, fg) = AppTheme.orderStatusColors(status, isDark: isDark);
+    final label = switch (status) {
+      'delivered' => lang == 'am' ? 'ደርሷል' : 'Delivered',
+      'processing' => lang == 'am' ? 'በሂደት ላይ' : 'Processing',
+      _ => lang == 'am' ? 'በመጠባበቅ ላይ' : 'Pending',
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
@@ -136,8 +143,10 @@ class _EmptyState extends StatelessWidget {
           Text(emoji, style: const TextStyle(fontSize: 56)),
           const SizedBox(height: 12),
           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-          const SizedBox(height: 4),
-          Text(sub, style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
+          if (sub.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(sub, style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
+          ],
         ],
       ),
     );
