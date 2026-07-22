@@ -3,30 +3,61 @@
 # google-services plugin isn't already wired (newer firebase_core
 # versions sometimes auto-wire this; this script is the fallback for
 # when they don't).
+#
+# Handles BOTH Gradle file formats, because `flutter create` defaults
+# to Kotlin DSL (build.gradle.kts / settings.gradle.kts) since Flutter
+# 3.29 — before that it generated Groovy (build.gradle / settings.gradle).
+# Since codemagic.yaml now tracks `flutter: stable`, whichever format
+# the currently-installed stable SDK scaffolds is auto-detected here.
 set -e
 
-SETTINGS="android/settings.gradle"
-APP_BUILD="android/app/build.gradle"
-
-echo "Checking Firebase Gradle wiring..."
-
-# 1) Declare the google-services plugin in settings.gradle (modern
-#    Flutter template's pluginManagement { plugins { ... } } block).
-if [ -f "$SETTINGS" ] && ! grep -q "com.google.gms.google-services" "$SETTINGS"; then
-  sed -i.bak '/id "com.android.application" version/a\
-    id "com.google.gms.google-services" version "4.4.2" apply false' "$SETTINGS"
-  echo "✅ Added google-services plugin declaration to settings.gradle"
+if [ -f "android/settings.gradle.kts" ]; then
+  SETTINGS="android/settings.gradle.kts"
+  IS_KTS=true
 else
-  echo "settings.gradle already wired (or not found) — skipping."
+  SETTINGS="android/settings.gradle"
+  IS_KTS=false
 fi
 
-# 2) Apply the plugin in app/build.gradle's plugins { } block.
-if [ -f "$APP_BUILD" ] && ! grep -q "com.google.gms.google-services" "$APP_BUILD"; then
-  sed -i.bak '/id "dev.flutter.flutter-gradle-plugin"/a\
-    id "com.google.gms.google-services"' "$APP_BUILD"
-  echo "✅ Applied google-services plugin in app/build.gradle"
+if [ -f "android/app/build.gradle.kts" ]; then
+  APP_BUILD="android/app/build.gradle.kts"
 else
-  echo "app/build.gradle already wired (or not found) — skipping."
+  APP_BUILD="android/app/build.gradle"
+fi
+
+echo "Checking Firebase Gradle wiring (settings=$SETTINGS, app=$APP_BUILD, kts=$IS_KTS)..."
+
+# 1) Declare the google-services plugin in settings.gradle(.kts)'s
+#    pluginManagement { plugins { ... } } block.
+if [ -f "$SETTINGS" ] && ! grep -q "com.google.gms.google-services" "$SETTINGS"; then
+  if [ "$IS_KTS" = true ]; then
+    # Kotlin DSL: id("com.android.application") version "..." apply false
+    sed -i.bak '/id("com.android.application") version/a\
+    id("com.google.gms.google-services") version "4.4.2" apply false' "$SETTINGS"
+  else
+    # Groovy: id "com.android.application" version "..." apply false
+    sed -i.bak '/id "com.android.application" version/a\
+    id "com.google.gms.google-services" version "4.4.2" apply false' "$SETTINGS"
+  fi
+  echo "✅ Added google-services plugin declaration to $SETTINGS"
+else
+  echo "$SETTINGS already wired (or not found) — skipping."
+fi
+
+# 2) Apply the plugin in app/build.gradle(.kts)'s plugins { } block.
+if [ -f "$APP_BUILD" ] && ! grep -q "com.google.gms.google-services" "$APP_BUILD"; then
+  if [[ "$APP_BUILD" == *.kts ]]; then
+    # Kotlin DSL: id("dev.flutter.flutter-gradle-plugin")
+    sed -i.bak '/id("dev.flutter.flutter-gradle-plugin")/a\
+    id("com.google.gms.google-services")' "$APP_BUILD"
+  else
+    # Groovy: id "dev.flutter.flutter-gradle-plugin"
+    sed -i.bak '/id "dev.flutter.flutter-gradle-plugin"/a\
+    id "com.google.gms.google-services"' "$APP_BUILD"
+  fi
+  echo "✅ Applied google-services plugin in $APP_BUILD"
+else
+  echo "$APP_BUILD already wired (or not found) — skipping."
 fi
 
 # 3) firebase_messaging / image_picker need minSdk 23+.
