@@ -356,6 +356,7 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
   Uint8List? _receiptPreview;
   bool _submitting = false;
   bool _confirmed = false;
+  bool _nameInvalid = false;
   bool _amountInvalid = false;
   bool _receiptInvalid = false;
   String? _receiptError;
