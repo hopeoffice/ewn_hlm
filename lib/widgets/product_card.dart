@@ -110,7 +110,7 @@ class ProductCard extends StatelessWidget {
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.brand)),
                           if (hasDiscount)
                             Text(S.formatPrice(product.price, app.lang),
-                                style: const TextStyle(
+                                style: TextStyle(
                                     decoration: TextDecoration.lineThrough,
                                     color: AppTheme.textMuted(context),
                                     fontSize: 11)),

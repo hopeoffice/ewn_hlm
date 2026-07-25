@@ -127,7 +127,7 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                                 if (hasDiscount) ...[
                                   const SizedBox(width: 8),
                                   Text(S.formatPrice(p.price, app.lang),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           decoration: TextDecoration.lineThrough,
                                           color: AppTheme.textMuted(context),
                                           fontSize: 13)),
