@@ -31,7 +31,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final lang = app.lang;
 
     return Scaffold(
-      backgroundColor: AppTheme.bgMain,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         title: Text(S.t('notifications', lang)),
         leading: IconButton(
@@ -50,7 +50,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text(S.t('notifications_sub', lang),
-                      style: const TextStyle(color: AppTheme.textSecondary)),
+                      style: TextStyle(color: AppTheme.textMuted(context))),
                 ],
               ),
             )
@@ -66,9 +66,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 return Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppTheme.bgCard,
+                    color: AppTheme.card(context),
                     borderRadius: BorderRadius.circular(AppTheme.radius),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: AppTheme.line(context)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +87,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           children: [
                             Text(message, style: const TextStyle(fontSize: 14, height: 1.4)),
                             const SizedBox(height: 6),
-                            Text(dateStr, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                            Text(dateStr, style: TextStyle(fontSize: 11, color: AppTheme.textMuted(context))),
                           ],
                         ),
                       ),

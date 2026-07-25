@@ -30,41 +30,80 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Container(
-      color: AppTheme.bgMain,
+      color: AppTheme.bg(context),
       child: CustomScrollView(
         slivers: [
-          // ---- Header (.app-header) ----
+          // ---- Header (.app-header) — now includes the search bar as a
+          // direct child instead of a separately-transformed sliver that
+          // floated (and could visually sit behind the header depending on
+          // header height/screen size). Simpler and robust: same Container,
+          // same stacking context, no negative-offset hack needed. ----
           SliverToBoxAdapter(
             child: Container(
               color: AppTheme.brand,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('📍', style: TextStyle(fontSize: 18)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    children: [
+                      const Text('📍', style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(S.t('location', app.lang), style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                            Text(
+                              app.locationName ?? S.t('getting_location', app.lang),
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      _HeaderIconBtn(
+                        emoji: '❤️',
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LikesScreen())),
+                      ),
+                      const SizedBox(width: 10),
+                      _HeaderIconBtn(
+                        emoji: '🔔',
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+                        badgeCount: app.unreadNotifCount,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  // ---- Search bar — now a normal child of the header, so
+                  // it always paints inside/on top of the header's own
+                  // background and can never end up hidden behind it. ----
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 2))],
+                    ),
+                    child: Row(
                       children: [
-                        Text(S.t('location', app.lang), style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                        Text(
-                          app.locationName ?? S.t('getting_location', app.lang),
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        const Text('🔍', style: TextStyle(fontSize: 16, color: Color(0xFF999999))),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: S.t('search', app.lang),
+                              hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                            style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
+                            onChanged: app.setSearch,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                  _HeaderIconBtn(
-                    emoji: '❤️',
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LikesScreen())),
-                  ),
-                  const SizedBox(width: 10),
-                  _HeaderIconBtn(
-                    emoji: '🔔',
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
-                    badgeCount: app.unreadNotifCount,
                   ),
                 ],
               ),
@@ -75,50 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
           if (app.showLocationBanner)
             SliverToBoxAdapter(child: _LocationBanner(app: app)),
 
-          // ---- Search bar, floating over the header/body seam ----
-          SliverToBoxAdapter(
-            child: Transform.translate(
-              offset: const Offset(0, -20),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 2))],
-                  ),
-                  child: Row(
-                    children: [
-                      const Text('🔍', style: TextStyle(fontSize: 16, color: Color(0xFF999999))),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: S.t('search', app.lang),
-                            hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
-                          style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
-                          onChanged: app.setSearch,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
           // ---- Ad banner carousel ----
           SliverToBoxAdapter(
-            child: Transform.translate(
-              offset: const Offset(0, -8),
-              child: BannerCarousel(
-                onSearchTap: () {},
-                onCategoryTap: app.setCategory,
-              ),
+            child: BannerCarousel(
+              onSearchTap: () {},
+              onCategoryTap: app.setCategory,
             ),
           ),
 
@@ -180,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(S.t('products_section', app.lang),
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
                   // Matches the web's <button ... onclick=""> — present
                   // but intentionally inert; the web app never wired it up.
                   TextButton(
@@ -196,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 30),
-                child: Center(child: Text(S.t('no_products', app.lang), style: const TextStyle(color: AppTheme.textSecondary))),
+                child: Center(child: Text(S.t('no_products', app.lang), style: TextStyle(color: AppTheme.textMuted(context)))),
               ),
             )
           else
@@ -278,7 +280,7 @@ class _LocationBanner extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        color: AppTheme.card(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.10), blurRadius: 10, offset: const Offset(0, 3))],
       ),
@@ -291,9 +293,9 @@ class _LocationBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(S.t('location_banner_title', app.lang),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary)),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.text(context))),
                 Text(S.t('location_banner_sub', app.lang),
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                    style: TextStyle(fontSize: 11, color: AppTheme.textMuted(context))),
               ],
             ),
           ),
@@ -415,7 +417,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+      child: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
     );
   }
 }

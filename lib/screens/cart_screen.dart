@@ -4,6 +4,7 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import 'checkout_screen.dart';
+import '../widgets/auth_sheet.dart';
 
 /// Ported from #screen-cart / .cart-item / .qty-btn / .cart-item-buy-btn
 /// in index.html + style.css + renderCart() (main-render.js).
@@ -16,7 +17,7 @@ class CartScreen extends StatelessWidget {
     final lang = app.lang;
 
     return Container(
-      color: AppTheme.bgMain,
+      color: AppTheme.bg(context),
       child: Column(
         children: [
           Padding(
@@ -27,7 +28,7 @@ class CartScreen extends StatelessWidget {
                 // but applyI18nToPage() replaces textContent with t('cart')
                 // on load — which has NO emoji — so the real rendered
                 // title is just "ጋሪ"/"Cart".
-                Text(S.t('cart', lang), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                Text(S.t('cart', lang), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
               ],
             ),
           ),
@@ -48,9 +49,9 @@ class CartScreen extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: AppTheme.bgCard,
+                          color: AppTheme.card(context),
                           borderRadius: BorderRadius.circular(AppTheme.radius),
-                          border: Border.all(color: AppTheme.border),
+                          border: Border.all(color: AppTheme.line(context)),
                           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10)],
                         ),
                         child: Row(
@@ -84,9 +85,9 @@ class CartScreen extends StatelessWidget {
                                           width: 14,
                                           height: 14,
                                           decoration: BoxDecoration(
-                                            color: _parseHexColor(item.color!) ?? AppTheme.border,
+                                            color: _parseHexColor(item.color!) ?? AppTheme.line(context),
                                             shape: BoxShape.circle,
-                                            border: Border.all(color: AppTheme.border),
+                                            border: Border.all(color: AppTheme.line(context)),
                                           ),
                                         ),
                                       ],
@@ -167,7 +168,8 @@ class CartScreen extends StatelessWidget {
 
   void _goToCheckout(BuildContext context, AppState app, int? cartIndex) {
     if (!app.isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ትዕዛዝ ለመላክ እባክዎ ይግቡ')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('login_required', app.lang))));
+      showAuthSheet(context);
       return;
     }
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => CheckoutScreen(cartIndex: cartIndex)));
@@ -195,11 +197,11 @@ class _QtyBtn extends StatelessWidget {
         width: 26,
         height: 26,
         decoration: BoxDecoration(
-          color: AppTheme.bgMain,
+          color: AppTheme.bg(context),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppTheme.border),
+          border: Border.all(color: AppTheme.line(context)),
         ),
-        child: Icon(icon, size: 14, color: AppTheme.textPrimary),
+        child: Icon(icon, size: 14, color: AppTheme.text(context)),
       ),
     );
   }
@@ -222,9 +224,9 @@ class _EmptyState extends StatelessWidget {
         children: [
           Text(emoji, style: const TextStyle(fontSize: 56)),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
           const SizedBox(height: 4),
-          Text(sub, style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
+          Text(sub, style: TextStyle(fontSize: 14, color: AppTheme.textMuted(context))),
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(

@@ -8,6 +8,8 @@ import 'package:http/http.dart' as http;
 import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/category.dart';
+import '../models/coin_rate_model.dart';
+import 'wallet_service.dart';
 
 /// Step 1 of the migration plan: same two databases the web app already
 /// uses, called with the native Flutter SDKs instead of firebase-init.js's
@@ -54,6 +56,27 @@ class FirebaseService {
       if (data is Map && data.isNotEmpty) {
         // Realtime DB can also serialize a JS array as a keyed map.
         return data.values.whereType<Map>().map((c) => AppCategory.fromMap(c)).toList();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Ported from loadFaqFromFirebase() in main-ui.js: reads the Help
+  /// Center FAQ list from `settings/faq` once. Returns null (not an
+  /// empty list) on failure or when nothing's there, so the caller
+  /// (HelpCenterScreen) falls back to the bundled assets/faq_data.json
+  /// — same fallback order as the web app, so FAQ edits made in the
+  /// admin panel show up in the app without a store release.
+  Future<List<Map<String, dynamic>>?> fetchFaqs() async {
+    try {
+      final snap = await _rtdb.ref('settings/faq').get();
+      final data = snap.value;
+      if (data is Map && data.isNotEmpty) {
+        return data.entries
+            .map((e) => {'id': e.key.toString(), ...Map<String, dynamic>.from(e.value as Map)})
+            .toList();
       }
       return null;
     } catch (_) {
@@ -206,6 +229,21 @@ class FirebaseService {
     });
   }
 
+  /// Mirrors watchCoinPurchases() above but for Sell Coins requests
+  /// (`users/{phone}/sellRequestMirror`) — added so the 💱 Wallet
+  /// screen's Sell action shows up as pending/rejected in the feed too.
+  Stream<List<Map<String, dynamic>>> watchCoinSellRequests(String phone) {
+    return _rtdb.ref('users/$phone/sellRequestMirror').onValue.map((event) {
+      final v = event.snapshot.value;
+      if (v is! Map) return <Map<String, dynamic>>[];
+      return v.entries.map((e) {
+        final m = Map<String, dynamic>.from(e.value as Map);
+        m['id'] = e.key;
+        return m;
+      }).toList();
+    });
+  }
+
   Stream<List<Map<String, dynamic>>> watchCoinTransactions(String phone) {
     return _rtdb.ref('users/$phone/coinTxMirror').onValue.map((event) {
       final v = event.snapshot.value;
@@ -315,13 +353,24 @@ class FirebaseService {
     return res.statusCode == 200;
   }
 
-  Future<bool> awardSignupBonus(String phone) async {
-    final res = await http.post(
-      Uri.parse('$workerBaseUrl/awardSignupBonus'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'phone': phone}),
-    );
-    return res.statusCode == 200;
+  /// Ported from handleAwardSignupBonus() in worker.js. Returns the new
+  /// coin balance on success (null on failure) so the caller can show the
+  /// bonus-included balance immediately without a separate fetch.
+  Future<int?> awardSignupBonus(String phone) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$workerBaseUrl/awardSignupBonus'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phone': phone}),
+      );
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200 && body['ok'] == true) {
+        return (body['coins'] as num?)?.toInt();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Ported from handleRedeemCoins() in worker.js. This is the ONLY way
@@ -333,7 +382,7 @@ class FirebaseService {
   /// Transaction History, never trusted for balance math.
   Future<RedeemCoinsResult> redeemCoins({
     required String phone,
-    required String pin,
+    required String password,
     required int coinsToUse,
     required double cartTotal,
     String? orderId,
@@ -344,7 +393,7 @@ class FirebaseService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'phone': phone,
-        'pin': pin,
+        'password': password,
         'coinsToUse': coinsToUse,
         'cartTotal': cartTotal,
         if (orderId != null) 'orderId': orderId,
@@ -361,26 +410,276 @@ class FirebaseService {
     );
   }
 
-  /// Ported from handleResetPin() in worker.js — the "ፓስዎርድ ረሳሁ?" flow.
-  /// [securityAnswer] is compared case-insensitively server-side against
-  /// what was stored at registration; the local comparison in the UI is
-  /// just for instant feedback and is never trusted on its own.
-  Future<ResetPinResult> resetPin({
+  /// Ported from submitAuthLogin() in main-config.js — POST /login.
+  /// Password is verified server-side (PBKDF2 hash comparison + 5-wrong/
+  /// 15-min lockout); the client never holds or compares the hash.
+  /// Errors: 'wrong_password', 'account_blocked', 'locked_try_later',
+  /// 'user_not_found', or 'migration_required' (legacy PIN-only account —
+  /// caller should route to the migrate step, not show this as an error).
+  Future<AuthResult> loginWithPassword({required String phone, required String password}) async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$workerBaseUrl/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'phone': phone, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 8));
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200 && body['ok'] == true) {
+        return AuthResult(ok: true, userData: Map<String, dynamic>.from(body['userData'] as Map));
+      }
+      return AuthResult(ok: false, error: body['error'] as String?);
+    } catch (_) {
+      return AuthResult(ok: false, error: 'connection_error');
+    }
+  }
+
+  /// Ported from requestVerificationCode() in main-config.js — POST
+  /// /sendVerificationCode. [purpose] is one of 'register', 'migrate', or
+  /// 'reset'. [email]/[password]/[name]/[referralCode] are required for
+  /// 'register' and 'migrate' but not 'reset' (which only needs the
+  /// account's own phone + the email to confirm it matches).
+  /// Errors: 'invalid_email', 'invalid_password', 'already_registered',
+  /// 'email_mismatch', 'blocked' (resend rate-limit hit — caller should
+  /// disable the resend button, not just show an error).
+  Future<AuthResult> sendVerificationCode({
     required String phone,
-    required String securityAnswer,
-    required String newPin,
+    required String purpose,
+    String? email,
+    String? password,
+    String? name,
+    String? referralCode,
   }) async {
-    final res = await http.post(
-      Uri.parse('$workerBaseUrl/resetPin'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'phone': phone,
-        'securityAnswer': securityAnswer.toLowerCase(),
-        'newPin': newPin,
-      }),
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$workerBaseUrl/sendVerificationCode'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'phone': phone,
+              'purpose': purpose,
+              if (email != null) 'email': email,
+              if (password != null) 'password': password,
+              if (name != null) 'name': name,
+              if (referralCode != null) 'referralCode': referralCode,
+            }),
+          )
+          .timeout(const Duration(seconds: 8));
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      return AuthResult(ok: res.statusCode == 200 && body['ok'] == true, error: body['error'] as String?);
+    } catch (_) {
+      return AuthResult(ok: false, error: 'connection_error');
+    }
+  }
+
+  /// Ported from submitVerifyCode()/submitForgotCodeAndPassword() in
+  /// main-config.js — POST /verifyEmailCode. [newPassword] only applies
+  /// when [purpose] == 'reset'. Returns the finalized `userData` on
+  /// success for 'register'/'migrate'/'reset' alike (used to log straight
+  /// in afterward). Errors: 'code_expired', 'wrong_code'.
+  Future<AuthResult> verifyEmailCode({
+    required String phone,
+    required String code,
+    required String purpose,
+    String? newPassword,
+  }) async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$workerBaseUrl/verifyEmailCode'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'phone': phone,
+              'code': code,
+              'purpose': purpose,
+              if (newPassword != null) 'newPassword': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 8));
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200 && body['ok'] == true) {
+        return AuthResult(ok: true, userData: Map<String, dynamic>.from(body['userData'] as Map));
+      }
+      return AuthResult(ok: false, error: body['error'] as String?);
+    } catch (_) {
+      return AuthResult(ok: false, error: 'connection_error');
+    }
+  }
+
+  /// Ported from confirmCoinPin() in main-coins.js — POST /verifyPassword.
+  /// Used right before letting the coin-redemption checkbox turn on, so a
+  /// wrong password is caught immediately rather than only at final
+  /// checkout submission.
+  Future<AuthResult> verifyPassword({required String phone, required String password}) async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$workerBaseUrl/verifyPassword'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'phone': phone, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 8));
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      return AuthResult(ok: res.statusCode == 200 && body['ok'] == true, error: body['error'] as String?);
+    } catch (_) {
+      return AuthResult(ok: false, error: 'connection_error');
+    }
+  }
+
+  /// Ported from fetchCoinRateData() in main-coins.js — reads
+  /// `coinRates/current` (admin-set buy/sell rate) and the last
+  /// [WalletService.walletHistoryLimit] entries of `coinRates/history`.
+  /// Falls back to [WalletService.coinValueEtb]-based rates (same as the
+  /// web app's `fallbackCurrent`) if either read fails or is empty, so
+  /// the Wallet screen always has *something* to render its chart from.
+  Future<CoinRateData> fetchCoinRateData() async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final fallbackCurrent = CoinRateSnapshot(
+      buyRate: WalletService.coinValueEtb,
+      sellRate: double.parse((WalletService.coinValueEtb * 0.9).toStringAsFixed(4)),
+      updatedAt: now,
     );
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    return ResetPinResult(ok: body['ok'] == true, error: body['error'] as String?);
+    try {
+      final curSnap = await _rtdb.ref('coinRates/current').get();
+      final histSnap = await _rtdb
+          .ref('coinRates/history')
+          .orderByKey()
+          .limitToLast(WalletService.walletHistoryLimit)
+          .get();
+
+      CoinRateSnapshot current = fallbackCurrent;
+      if (curSnap.exists && curSnap.value is Map) {
+        final m = Map<String, dynamic>.from(curSnap.value as Map);
+        current = CoinRateSnapshot(
+          buyRate: (m['buyRate'] as num?)?.toDouble() ?? fallbackCurrent.buyRate,
+          sellRate: (m['sellRate'] as num?)?.toDouble() ?? fallbackCurrent.sellRate,
+          updatedAt: (m['updatedAt'] as num?)?.toInt() ?? now,
+        );
+      }
+
+      final history = <CoinRatePoint>[];
+      if (histSnap.exists && histSnap.value is Map) {
+        final m = Map<String, dynamic>.from(histSnap.value as Map);
+        for (final entry in m.entries) {
+          final v = Map<String, dynamic>.from(entry.value as Map);
+          history.add(CoinRatePoint(
+            ts: int.tryParse(entry.key) ?? now,
+            buyRate: (v['buyRate'] as num?)?.toDouble() ?? current.buyRate,
+            sellRate: (v['sellRate'] as num?)?.toDouble() ?? current.sellRate,
+          ));
+        }
+        history.sort((a, b) => a.ts.compareTo(b.ts));
+      }
+      if (history.isEmpty) {
+        history.add(CoinRatePoint(ts: now - 24 * 60 * 60 * 1000, buyRate: current.buyRate, sellRate: current.sellRate));
+        history.add(CoinRatePoint(ts: now, buyRate: current.buyRate, sellRate: current.sellRate));
+      }
+      return CoinRateData(current: current, history: history);
+    } catch (_) {
+      return CoinRateData(current: fallbackCurrent, history: [
+        CoinRatePoint(ts: now - 1, buyRate: fallbackCurrent.buyRate, sellRate: fallbackCurrent.sellRate),
+        CoinRatePoint(ts: now, buyRate: fallbackCurrent.buyRate, sellRate: fallbackCurrent.sellRate),
+      ]);
+    }
+  }
+
+  /// Ported from submitSellCoinsRequest() in main-coins.js — like Buy
+  /// Coins, this is a "pending request, admin approves" write (the
+  /// client can never deduct its own coin balance directly per
+  /// database_rules.json), plus a text-only Telegram notification
+  /// (ported from sendSellRequestToTelegram()).
+  Future<bool> submitSellCoins({
+    required String phone,
+    required String name,
+    required int coins,
+    required double sellRate,
+    required String paymentMethodLabel,
+    required String account,
+  }) async {
+    final id = 'SELL-${DateTime.now().millisecondsSinceEpoch.toRadixString(36).toUpperCase()}';
+    final etbAmount = double.parse((coins * sellRate).toStringAsFixed(2));
+    final request = {
+      'id': id,
+      'phone': phone,
+      'name': name,
+      'coins': coins,
+      'sellRate': sellRate,
+      'etbAmount': etbAmount,
+      'paymentMethod': paymentMethodLabel,
+      'account': account,
+      'status': 'pending',
+      'date': DateTime.now().toIso8601String(),
+    };
+    try {
+      await _rtdb.ref('coinSellRequests/$id').set(request);
+      unawaited(_rtdb.ref('users/$phone/sellRequestMirror/$id').set(request));
+
+      final text = [
+        '🪙 የ coin ሽያጭ ጥያቄ / Coin Sell Request',
+        '',
+        '🆔 ID: $id',
+        '👤 ደንበኛ: $name ($phone)',
+        '🪙 የሚሸጡት: $coins Coins',
+        '💰 የሚከፈላቸው: $etbAmount ETB',
+        '💳 ወደ: $paymentMethodLabel — $account',
+      ].join('\n');
+      await sendTelegramMessage(text);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Ported from submitTransferCoins() in main-coins.js — user-to-user,
+  /// immediate (no admin approval needed, unlike Buy/Sell), enforced
+  /// entirely server-side by the Worker (`POST /transferCoins`) which
+  /// re-verifies the password and re-checks the balance itself.
+  /// Returns null on success, or one of: 'recipient_not_found',
+  /// 'insufficient_balance', 'wrong_password', 'connection_error'.
+  Future<String?> transferCoins({
+    required String phone,
+    required String password,
+    required String toPhone,
+    required int coins,
+  }) async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$workerBaseUrl/transferCoins'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'phone': phone, 'password': password, 'toPhone': toPhone, 'coins': coins}),
+          )
+          .timeout(const Duration(seconds: 8));
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200 && body['ok'] == true) return null;
+      return (body['error'] as String?) ?? 'connection_error';
+    } catch (_) {
+      return 'connection_error';
+    }
+  }
+
+  /// Ported from submitUpdateName() in main-coins.js — POST /updateName.
+  /// Returns (newName, null) on success, or (null, errorCode) — one of
+  /// 'cooldown_active', 'wrong_password', 'invalid_name', 'user_not_found',
+  /// 'locked_try_later', 'connection_error'.
+  Future<(String?, String?)> updateName({required String phone, required String password, required String newName}) async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$workerBaseUrl/updateName'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'phone': phone, 'password': password, 'newName': newName}),
+          )
+          .timeout(const Duration(seconds: 8));
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200 && body['ok'] == true) {
+        return (body['name'] as String?, null);
+      }
+      return (null, (body['error'] as String?) ?? 'connection_error');
+    } catch (_) {
+      return (null, 'connection_error');
+    }
   }
 
   Future<void> sendTelegramMessage(String text) {
@@ -488,6 +787,42 @@ class FirebaseService {
   Future<void> saveFcmToken(String phone, String token) {
     return _rtdb.ref('users/$phone/fcmToken').set(token);
   }
+
+  // ---------------- Help Center → Admin escalation ----------------
+
+  /// Ported from hcSendToAdmin() in main-ui.js: pushes the message to
+  /// `support/{pushId}` and enforces a 24h-per-phone rate limit via
+  /// `support_limit/{phone}` (a plain millisecond timestamp, same as the
+  /// web app — so the limit is shared/consistent across both apps for
+  /// the same account). Returns 'rate_limited' if the user already sent
+  /// one today, null on success, or 'error' on any other failure.
+  Future<String?> sendSupportMessage({
+    required String phone,
+    required String name,
+    required String message,
+  }) async {
+    try {
+      final limitSnap = await _rtdb.ref('support_limit/$phone').get();
+      if (limitSnap.exists) {
+        final last = (limitSnap.value as num).toInt();
+        if (DateTime.now().millisecondsSinceEpoch - last < 24 * 60 * 60 * 1000) {
+          return 'rate_limited';
+        }
+      }
+
+      await _rtdb.ref('support').push().set({
+        'phone': phone,
+        'name': name,
+        'message': message,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'read': false,
+      });
+      await _rtdb.ref('support_limit/$phone').set(DateTime.now().millisecondsSinceEpoch);
+      return null;
+    } catch (_) {
+      return 'error';
+    }
+  }
 }
 
 /// Result of FirebaseService.redeemCoins() — mirrors the JSON shape
@@ -504,12 +839,18 @@ class RedeemCoinsResult {
   RedeemCoinsResult({required this.ok, this.error, this.coins, this.discountETB, this.maxUsable});
 }
 
-/// Result of FirebaseService.resetPin() — mirrors handleResetPin() in
-/// worker.js. [error] is one of: 'invalid_phone', 'invalid_pin',
-/// 'locked_try_later', 'user_not_found', 'wrong_answer', or 'internal_error'.
-class ResetPinResult {
+/// Generic result for the email/password auth endpoints (login,
+/// sendVerificationCode, verifyEmailCode, verifyPassword). [userData] is
+/// only present for loginWithPassword()/verifyEmailCode() successes — the
+/// finalized user record to log in with. [error] is one of:
+/// 'wrong_password', 'account_blocked', 'locked_try_later',
+/// 'migration_required', 'already_registered', 'invalid_email',
+/// 'invalid_password', 'email_mismatch', 'code_expired', 'wrong_code',
+/// 'cooldown', 'blocked', 'user_not_found', 'connection_error'.
+class AuthResult {
   final bool ok;
   final String? error;
+  final Map<String, dynamic>? userData;
 
-  ResetPinResult({required this.ok, this.error});
+  AuthResult({required this.ok, this.error, this.userData});
 }

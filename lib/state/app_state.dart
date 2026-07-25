@@ -5,6 +5,7 @@ import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user_model.dart';
 import '../models/category.dart';
+import '../models/coin_rate_model.dart';
 import '../services/firebase_service.dart';
 import '../services/storage_service.dart';
 import '../services/push_service.dart';
@@ -58,8 +59,10 @@ class AppState extends ChangeNotifier {
   StreamSubscription<int>? _coinSub;
   StreamSubscription<int>? _referralSub;
   StreamSubscription<List<Map<String, dynamic>>>? _coinPurchasesSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _coinSellRequestsSub;
   StreamSubscription<List<Map<String, dynamic>>>? _coinTxSub;
   List<Map<String, dynamic>> _coinPurchases = [];
+  List<Map<String, dynamic>> _coinSellRequests = [];
   List<Map<String, dynamic>> _coinTransactions = [];
 
   bool get isAuthenticated => user != null;
@@ -110,14 +113,31 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- Auth (custom phone + 4-digit PIN, main-config.js) ----------------
+  // ---------------- Auth (phone + email/password, Worker-verified) ----------------
 
-  Future<String?> login(String phone, String pin) async {
-    final data = await _fb.fetchUser(phone);
-    if (data == null) return 'user_not_found';
-    if (data['pin'].toString() != pin) return 'wrong_pin';
-    if (data['blocked'] == true) return 'account_blocked';
+  /// Ported from submitAuthLogin() in main-config.js — POST /login via
+  /// the Worker (password hash comparison + lockout are all server-side
+  /// now; the client never sees or compares a password hash).
+  ///
+  /// Returns null on success, or an error code: 'wrong_password',
+  /// 'account_blocked', 'locked_try_later', 'user_not_found', or the
+  /// special 'migration_required' — the caller (auth_sheet.dart) should
+  /// treat that one as a silent redirect to the migrate step, not an
+  /// error message, exactly like goToAuthStep('auth-step-migrate') does
+  /// in the web app.
+  Future<String?> login(String phone, String password) async {
+    final result = await _fb.loginWithPassword(phone: phone, password: password);
+    if (!result.ok) return result.error ?? 'connection_error';
+    await _completeLogin(phone, result.userData!);
+    return null;
+  }
 
+  /// Shared session-setup — was inlined in login() alone before; now also
+  /// used by completeRegister()/completeMigrate()/completeForgotPassword()
+  /// since all four now end with the same Worker-returned `userData`
+  /// getting logged straight in (matching loginWithUserData() in
+  /// main-config.js, which every one of those flows calls at the end).
+  Future<void> _completeLogin(String phone, Map<String, dynamic> data) async {
     user = UserModel(name: data['name'] as String, phone: phone);
     await StorageService.saveSession(user!);
 
@@ -155,7 +175,6 @@ class AppState extends ChangeNotifier {
     _loadReferralInfo(phone);
     _watchNotifications();
     notifyListeners();
-    return null; // success
   }
 
   Future<void> _loadReferralInfo(String phone) async {
@@ -179,6 +198,11 @@ class AppState extends ChangeNotifier {
       _coinPurchases = list;
       notifyListeners();
     });
+    _coinSellRequestsSub?.cancel();
+    _coinSellRequestsSub = _fb.watchCoinSellRequests(phone).listen((list) {
+      _coinSellRequests = list;
+      notifyListeners();
+    });
     _coinTxSub?.cancel();
     _coinTxSub = _fb.watchCoinTransactions(phone).listen((list) {
       _coinTransactions = list;
@@ -186,14 +210,37 @@ class AppState extends ChangeNotifier {
     });
   }
 
-  /// Ported from renderTransactionHistoryScreen()'s feedItems merge/sort:
-  /// pending buy-coin requests + confirmed coin transactions, newest first.
+  /// Ported from renderTransactionHistoryScreen()'s feedItems merge/sort
+  /// (main-coins.js, 2026-07-25 revision): pending AND rejected Buy/Sell
+  /// requests, plus confirmed coin transactions — newest first. Rejected
+  /// rows carry the admin's `rejectReason` so the customer knows why.
   List<CoinFeedItem> get coinFeed {
     final items = <CoinFeedItem>[];
     for (final p in _coinPurchases) {
-      if (p['status'] == 'pending') {
+      final status = p['status'] as String?;
+      final coins = (p['coins'] as num?)?.toInt() ?? 0;
+      if (status == 'pending') {
         final time = DateTime.tryParse(p['date'] as String? ?? '')?.millisecondsSinceEpoch ?? 0;
-        items.add(CoinFeedItem.pending(time: time, coins: (p['coins'] as num?)?.toInt() ?? 0, date: p['date'] as String?));
+        items.add(CoinFeedItem.pendingBuy(time: time, coins: coins));
+      } else if (status == 'rejected') {
+        final time = (p['reviewedAt'] as num?)?.toInt() ??
+            DateTime.tryParse(p['date'] as String? ?? '')?.millisecondsSinceEpoch ??
+            0;
+        items.add(CoinFeedItem.rejectedBuy(time: time, coins: coins, rejectReason: p['rejectReason'] as String?));
+      }
+    }
+    for (final s in _coinSellRequests) {
+      final status = s['status'] as String?;
+      final coins = (s['coins'] as num?)?.toInt() ?? 0;
+      final etbAmount = (s['etbAmount'] as num?)?.toDouble() ?? 0;
+      if (status == 'pending') {
+        final time = DateTime.tryParse(s['date'] as String? ?? '')?.millisecondsSinceEpoch ?? 0;
+        items.add(CoinFeedItem.pendingSell(time: time, coins: coins, etbAmount: etbAmount));
+      } else if (status == 'rejected') {
+        final time = (s['reviewedAt'] as num?)?.toInt() ??
+            DateTime.tryParse(s['date'] as String? ?? '')?.millisecondsSinceEpoch ??
+            0;
+        items.add(CoinFeedItem.rejectedSell(time: time, coins: coins, etbAmount: etbAmount, rejectReason: s['rejectReason'] as String?));
       }
     }
     for (final tx in _coinTransactions) {
@@ -227,6 +274,51 @@ class AppState extends ChangeNotifier {
       receiptBytes: receiptBytes,
       receiptFilename: receiptFilename,
     );
+  }
+
+  /// Ported from fetchCoinRateData() call inside renderWalletScreen() —
+  /// used by the 💱 Wallet screen for its current price + chart.
+  Future<CoinRateData> fetchCoinRateData() => _fb.fetchCoinRateData();
+
+  /// Ported from submitSellCoinsRequest() in main-coins.js.
+  Future<bool> submitSellCoins({
+    required int coins,
+    required double sellRate,
+    required String paymentMethodLabel,
+    required String account,
+  }) {
+    if (!isAuthenticated) return Future.value(false);
+    return _fb.submitSellCoins(
+      phone: user!.phone,
+      name: user!.name,
+      coins: coins,
+      sellRate: sellRate,
+      paymentMethodLabel: paymentMethodLabel,
+      account: account,
+    );
+  }
+
+  /// Ported from submitTransferCoins() in main-coins.js. Returns null on
+  /// success, or an error code ('recipient_not_found',
+  /// 'insufficient_balance', 'wrong_password', 'connection_error').
+  Future<String?> transferCoins({required String toPhone, required int coins, required String password}) {
+    if (!isAuthenticated) return Future.value('not_authenticated');
+    return _fb.transferCoins(phone: user!.phone, password: password, toPhone: toPhone, coins: coins);
+  }
+
+  /// Ported from submitUpdateName() in main-coins.js. On success, updates
+  /// the in-memory user + persisted session (same fields the web app
+  /// re-saves to localStorage: name + phone only) and returns the new
+  /// name with a null error.
+  Future<(String?, String?)> updateName({required String newName, required String password}) async {
+    if (!isAuthenticated) return (null, 'not_authenticated');
+    final (name, err) = await _fb.updateName(phone: user!.phone, password: password, newName: newName);
+    if (err == null && name != null) {
+      user = UserModel(name: name, phone: user!.phone);
+      await StorageService.saveSession(user!);
+      notifyListeners();
+    }
+    return (name, err);
   }
 
   // ---------------- Location (Task #13) ----------------
@@ -272,62 +364,190 @@ class AppState extends ChangeNotifier {
 
   static final RegExp ethioPhoneRe = RegExp(r'^(09|07)\d{8}$');
 
-  /// [incomingReferralCode] = the code the new user typed in (someone
-  /// else's share link) — optional, mirrors `auth-reg-ref` field / the
-  /// `?ref=` query param handling in index.html.
-  /// [securityQuestion]/[securityAnswer] power the "ፓስዎርድ ረሳሁ?" flow —
-  /// required at registration, same as the web's auth-reg-question /
-  /// auth-reg-answer fields.
-  Future<String?> register(
-    String name,
-    String phone,
-    String pin, {
-    required String securityQuestion,
-    required String securityAnswer,
+  // ---- Pending state kept while an email verification code is
+  // outstanding — mirrors _authRegisterPending/_authMigratePending in
+  // main-config.js. Needed so completeRegister()/completeMigrate() and
+  // the "resend code" actions know what to finish/resend without asking
+  // the user to retype everything.
+  _PendingRegister? _pendingRegister;
+  _PendingMigrate? _pendingMigrate;
+
+  /// Step 1 of registration — ported from submitAuthRegisterStart() in
+  /// main-config.js. Sends the 5-digit email verification code; the
+  /// account itself isn't created yet (that happens in completeRegister()
+  /// once the code is confirmed). Returns null on success, or an error
+  /// code: 'invalid_email', 'invalid_password', 'already_registered',
+  /// 'connection_error'.
+  Future<String?> startRegister({
+    required String name,
+    required String phone,
+    required String email,
+    required String password,
     String? incomingReferralCode,
   }) async {
-    final existing = await _fb.fetchUser(phone);
-    if (existing != null) return 'already_registered';
-
     final myCode = FirebaseService.generateReferralCode();
-
-    await _fb.createUser(phone, {
-      'name': name,
-      'pin': pin,
-      'securityQuestion': securityQuestion,
-      'securityAnswer': securityAnswer.toLowerCase(),
-      'cart': [],
-      'likes': [],
-      'orders': {},
-      'referralCode': myCode, // saved at registration time, same as promoCode in main-config.js
-    });
-    await _fb.setReferralIndex(myCode, phone);
-    await _fb.awardSignupBonus(phone);
-
-    // Credit whoever referred this new user, if a valid code was given.
-    final incoming = incomingReferralCode?.trim().toUpperCase();
-    if (incoming != null && incoming.length >= 6 && incoming != myCode) {
-      final ownerPhone = await _fb.resolveReferralOwner(incoming);
-      if (ownerPhone != null) {
-        await _fb.trackReferralUse(incoming, phone);
-        final newCount = await _fb.incrementReferralCount(ownerPhone);
-        final withinCap = newCount == null || newCount <= WalletService.maxReferralCountForCoins;
-        if (withinCap) {
-          await _fb.awardReferralCoins(incoming, ownerPhone, phone);
-        }
-      }
-    }
-
-    return login(phone, pin);
+    final result = await _fb.sendVerificationCode(
+      phone: phone,
+      purpose: 'register',
+      email: email,
+      password: password,
+      name: name,
+      referralCode: myCode,
+    );
+    if (!result.ok) return result.error ?? 'connection_error';
+    _pendingRegister = _PendingRegister(
+      name: name,
+      phone: phone,
+      email: email,
+      password: password,
+      myCode: myCode,
+      incomingReferralCode: incomingReferralCode,
+    );
+    return null;
   }
 
-  /// The "ፓስዎርድ ረሳሁ?" flow — mirrors submitForgotPin() in main-config.js.
-  /// Returns null on success (PIN has been changed server-side), or an
-  /// error code: 'wrong_answer', 'invalid_pin', 'locked_try_later',
-  /// 'user_not_found', or 'reset_failed'.
-  Future<String?> resetPin(String phone, String securityAnswer, String newPin) async {
-    final result = await _fb.resetPin(phone: phone, securityAnswer: securityAnswer, newPin: newPin);
-    return result.ok ? null : (result.error ?? 'reset_failed');
+  /// Resends the registration code — ports resendVerifyCode() (register
+  /// branch) in main-config.js. Must be called after a successful
+  /// startRegister() in the same flow.
+  Future<String?> resendRegisterCode() async {
+    final p = _pendingRegister;
+    if (p == null) return 'connection_error';
+    final result = await _fb.sendVerificationCode(
+      phone: p.phone,
+      purpose: 'register',
+      email: p.email,
+      password: p.password,
+      name: p.name,
+      referralCode: p.myCode,
+    );
+    return result.ok ? null : (result.error ?? 'connection_error');
+  }
+
+  /// Step 2 of registration — ported from submitVerifyCode() +
+  /// finishRegistrationAfterVerify() in main-config.js. The Worker
+  /// creates users/{phone} once the code matches; this then does the
+  /// client-only bits that were always client-side: caching the new
+  /// promo code and crediting whoever referred this user.
+  Future<String?> completeRegister(String code) async {
+    final p = _pendingRegister;
+    if (p == null) return 'connection_error';
+    final result = await _fb.verifyEmailCode(phone: p.phone, code: code, purpose: 'register');
+    if (!result.ok) return result.error ?? 'connection_error';
+    final userData = result.userData!;
+
+    try {
+      await _fb.setReferralIndex(p.myCode, p.phone);
+
+      // 🪙 Signup bonus — ports the awardSignupBonus() call in
+      // finishRegistrationAfterVerify() (main-config.js). Updates
+      // userData.coins with the post-bonus balance BEFORE logging in, so
+      // the new account's first balance shown already includes it
+      // instead of appearing to be 0 until a later refresh.
+      final newCoins = await _fb.awardSignupBonus(p.phone);
+      if (newCoins != null) userData['coins'] = newCoins;
+
+      final incoming = p.incomingReferralCode?.trim().toUpperCase();
+      if (incoming != null && incoming.length >= 6 && incoming != p.myCode) {
+        final ownerPhone = await _fb.resolveReferralOwner(incoming);
+        if (ownerPhone != null) {
+          await _fb.trackReferralUse(incoming, p.phone);
+          final newCount = await _fb.incrementReferralCount(ownerPhone);
+          final withinCap = newCount == null || newCount <= WalletService.maxReferralCountForCoins;
+          if (withinCap) {
+            await _fb.awardReferralCoins(incoming, ownerPhone, p.phone);
+          }
+        }
+      }
+    } catch (_) {
+      // Non-fatal — referral crediting failing shouldn't block the new
+      // account from logging in, matching the web app's try/catch here.
+    }
+
+    _pendingRegister = null;
+    await _completeLogin(p.phone, userData);
+    return null;
+  }
+
+  /// Step 1 of the legacy-account migration flow (add email + new
+  /// password) — ports submitAuthMigrateStart() in main-config.js.
+  /// Reached when login()/checkPhone() surfaces 'migration_required' for
+  /// an existing PIN-only account. Returns null on success (code sent),
+  /// or 'invalid_email' / 'invalid_password' / 'connection_error'.
+  Future<String?> startMigrate({required String phone, required String email, required String password}) async {
+    final result = await _fb.sendVerificationCode(phone: phone, purpose: 'migrate', email: email, password: password);
+    if (!result.ok) return result.error ?? 'connection_error';
+    _pendingMigrate = _PendingMigrate(phone: phone, email: email, password: password);
+    return null;
+  }
+
+  /// Resends the migration code — ports resendVerifyCode() (migrate
+  /// branch) in main-config.js.
+  Future<String?> resendMigrateCode() async {
+    final p = _pendingMigrate;
+    if (p == null) return 'connection_error';
+    final result = await _fb.sendVerificationCode(phone: p.phone, purpose: 'migrate', email: p.email, password: p.password);
+    return result.ok ? null : (result.error ?? 'connection_error');
+  }
+
+  /// Step 2 of migration — ports the migrate branch of submitVerifyCode()
+  /// in main-config.js: the Worker adds email/password to the existing
+  /// account and marks it `emailVerified`, then this logs straight in.
+  Future<String?> completeMigrate(String code) async {
+    final p = _pendingMigrate;
+    if (p == null) return 'connection_error';
+    final result = await _fb.verifyEmailCode(phone: p.phone, code: code, purpose: 'migrate');
+    if (!result.ok) return result.error ?? 'connection_error';
+    _pendingMigrate = null;
+    await _completeLogin(p.phone, result.userData!);
+    return null;
+  }
+
+  /// The "ፓስዎርድ ረሳሁ?" flow, step 1 — ports handleForgotSendClick() in
+  /// main-config.js. Sends a reset code to the account's email (the
+  /// Worker verifies [email] actually matches the account before
+  /// sending — the client is never told whether it matched or not up
+  /// front, to avoid leaking which email is on file). Returns null on
+  /// success, or 'invalid_email' / 'email_mismatch' /
+  /// 'migration_required' (legacy account — caller should route to the
+  /// migrate step instead) / 'connection_error'.
+  Future<String?> sendForgotCode({required String phone, required String email}) async {
+    final result = await _fb.sendVerificationCode(phone: phone, purpose: 'reset', email: email);
+    return result.ok ? null : (result.error ?? 'connection_error');
+  }
+
+  /// The "ፓስዎርድ ረሳሁ?" flow, step 2 — ports submitForgotCodeAndPassword()
+  /// in main-config.js. Combines code confirmation + setting the new
+  /// password in one call (unlike register/migrate, which verify the
+  /// code first and separately). Returns null on success (already logged
+  /// in), or 'code_expired' / 'wrong_code' / 'invalid_password' /
+  /// 'connection_error'.
+  Future<String?> completeForgotPassword({required String phone, required String code, required String newPassword}) async {
+    final result = await _fb.verifyEmailCode(phone: phone, code: code, purpose: 'reset', newPassword: newPassword);
+    if (!result.ok) return result.error ?? 'connection_error';
+    await _completeLogin(phone, result.userData!);
+    return null;
+  }
+
+  /// Ported from hcSendToAdmin() in main-ui.js — Help Center "Send to
+  /// Admin" escalation. Falls back to 'unknown'/'Customer' for a guest,
+  /// matching `state.user || {}` in the web app (the web app lets even
+  /// an unauthenticated visitor send a support message).
+  Future<String?> sendSupportMessage(String message) {
+    return _fb.sendSupportMessage(
+      phone: user?.phone ?? 'unknown',
+      name: user?.name ?? 'Customer',
+      message: message,
+    );
+  }
+
+  /// Ported from confirmCoinPin() in main-coins.js — verifies the
+  /// account password server-side (POST /verifyPassword) right when the
+  /// coin-redemption checkbox is toggled on, so a wrong password is
+  /// caught immediately instead of only failing at final checkout submit.
+  Future<String?> verifyPassword(String password) async {
+    if (!isAuthenticated) return 'not_authenticated';
+    final result = await _fb.verifyPassword(phone: user!.phone, password: password);
+    return result.ok ? null : (result.error ?? 'connection_error');
   }
 
   Future<void> logout() async {
@@ -343,8 +563,10 @@ class AppState extends ChangeNotifier {
     _coinSub?.cancel();
     _referralSub?.cancel();
     _coinPurchasesSub?.cancel();
+    _coinSellRequestsSub?.cancel();
     _coinTxSub?.cancel();
     _coinPurchases = [];
+    _coinSellRequests = [];
     _coinTransactions = [];
     await StorageService.saveCart(cart);
     await StorageService.saveOrders(orders);
@@ -479,7 +701,7 @@ class AppState extends ChangeNotifier {
     required String address,
     required String region,
     int coinsUsed = 0,
-    String? coinPin,
+    String? coinPassword,
   }) async {
     if (!isAuthenticated) return 'not_authenticated';
 
@@ -556,11 +778,11 @@ class AppState extends ChangeNotifier {
     // mirrors finalizeCoinRedemption() being called at the very end of
     // submitCheckout(). If this fails, the order still stands (matches
     // the web app's behavior); we just log it rather than blocking.
-    if (coinsUsed > 0 && coinPin != null) {
+    if (coinsUsed > 0 && coinPassword != null) {
       final redeemErr = await redeemCoinsForOrder(
         coinsToUse: coinsUsed,
         cartTotal: rawTotal,
-        pin: coinPin,
+        password: coinPassword,
         orderId: order['id'] as String,
         orderPercent: coinPercent,
       );
@@ -602,21 +824,21 @@ class AppState extends ChangeNotifier {
   }
 
   /// Actually spends [coinsToUse] as a discount on an order worth
-  /// [cartTotal], re-checking [pin] server-side. Returns null + updates
-  /// [coins] on success, or an error code string on failure — one of
-  /// 'not_authenticated', 'wrong_pin', 'locked_try_later', 'out_of_range',
-  /// 'exceeds_max_usable', or 'redeem_failed'.
+  /// [cartTotal], re-checking [password] server-side. Returns null +
+  /// updates [coins] on success, or an error code string on failure —
+  /// one of 'not_authenticated', 'wrong_password', 'locked_try_later',
+  /// 'out_of_range', 'exceeds_max_usable', or 'redeem_failed'.
   Future<String?> redeemCoinsForOrder({
     required int coinsToUse,
     required double cartTotal,
-    required String pin,
+    required String password,
     String? orderId,
     int? orderPercent,
   }) async {
     if (!isAuthenticated) return 'not_authenticated';
     final result = await _fb.redeemCoins(
       phone: user!.phone,
-      pin: pin,
+      password: password,
       coinsToUse: coinsToUse,
       cartTotal: cartTotal,
       orderId: orderId,
@@ -709,34 +931,97 @@ class AppState extends ChangeNotifier {
     _referralSub?.cancel();
     _notifSub?.cancel();
     _coinPurchasesSub?.cancel();
+    _coinSellRequestsSub?.cancel();
     _coinTxSub?.cancel();
     super.dispose();
   }
 }
 
 /// Ported from the merged feedItems row types in renderTransactionHistoryScreen()
-/// (main-coins.js): either a still-pending "Buy Coins" request, or a
-/// confirmed ledger entry (earn/redeem/admin adjustment).
+/// (main-coins.js, 2026-07-25 revision): a pending or rejected Buy/Sell
+/// request, or a confirmed ledger entry (earn/redeem/admin adjustment).
+enum CoinFeedKind { pendingBuy, pendingSell, rejectedBuy, rejectedSell, tx }
+
 class CoinFeedItem {
   final int time;
-  final bool isPending;
-  final int coins; // pending only — the amount requested
-  final String? date; // pending only
+  final CoinFeedKind kind;
+  final int coins; // buy/sell rows — the coin amount requested
+  final double etbAmount; // sell rows only — ETB the customer will receive
+  final String? rejectReason; // rejected rows only — admin's comment
 
   final String type; // tx only
   final int amount; // tx only — signed (+credit / -debit)
   final String? orderId; // tx only, redeem rows
   final int? orderPercent; // tx only, redeem rows
 
-  CoinFeedItem.pending({required this.time, required this.coins, this.date})
-      : isPending = true,
+  bool get isPending => kind == CoinFeedKind.pendingBuy || kind == CoinFeedKind.pendingSell;
+  bool get isRejected => kind == CoinFeedKind.rejectedBuy || kind == CoinFeedKind.rejectedSell;
+
+  CoinFeedItem.pendingBuy({required this.time, required this.coins})
+      : kind = CoinFeedKind.pendingBuy,
+        etbAmount = 0,
+        rejectReason = null,
+        type = '',
+        amount = 0,
+        orderId = null,
+        orderPercent = null;
+
+  CoinFeedItem.pendingSell({required this.time, required this.coins, required this.etbAmount})
+      : kind = CoinFeedKind.pendingSell,
+        rejectReason = null,
+        type = '',
+        amount = 0,
+        orderId = null,
+        orderPercent = null;
+
+  CoinFeedItem.rejectedBuy({required this.time, required this.coins, this.rejectReason})
+      : kind = CoinFeedKind.rejectedBuy,
+        etbAmount = 0,
+        type = '',
+        amount = 0,
+        orderId = null,
+        orderPercent = null;
+
+  CoinFeedItem.rejectedSell({required this.time, required this.coins, required this.etbAmount, this.rejectReason})
+      : kind = CoinFeedKind.rejectedSell,
         type = '',
         amount = 0,
         orderId = null,
         orderPercent = null;
 
   CoinFeedItem.tx({required this.time, required this.type, required this.amount, this.orderId, this.orderPercent})
-      : isPending = false,
+      : kind = CoinFeedKind.tx,
         coins = 0,
-        date = null;
+        etbAmount = 0,
+        rejectReason = null;
+}
+
+/// Held between startRegister() and completeRegister()/resendRegisterCode()
+/// — mirrors _authRegisterPending in main-config.js.
+class _PendingRegister {
+  final String name;
+  final String phone;
+  final String email;
+  final String password;
+  final String myCode;
+  final String? incomingReferralCode;
+
+  _PendingRegister({
+    required this.name,
+    required this.phone,
+    required this.email,
+    required this.password,
+    required this.myCode,
+    this.incomingReferralCode,
+  });
+}
+
+/// Held between startMigrate() and completeMigrate()/resendMigrateCode()
+/// — mirrors _authMigratePending in main-config.js.
+class _PendingMigrate {
+  final String phone;
+  final String email;
+  final String password;
+
+  _PendingMigrate({required this.phone, required this.email, required this.password});
 }

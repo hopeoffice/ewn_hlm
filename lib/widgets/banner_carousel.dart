@@ -131,7 +131,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
               width: active ? 18 : 6,
               height: 6,
               decoration: BoxDecoration(
-                color: active ? AppTheme.accent : AppTheme.border,
+                color: active ? AppTheme.accent : AppTheme.line(context),
                 borderRadius: BorderRadius.circular(3),
               ),
             );

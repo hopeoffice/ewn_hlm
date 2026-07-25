@@ -56,19 +56,38 @@ class AppTheme {
   static const Color statusProcessingBgDark = Color(0xFF0D1F3C);
   static const Color statusProcessingTextDark = Color(0xFF60A5FA);
 
-  // ---- Back-compat aliases (existing screens reference these directly) ----
-  // NOTE: these currently always resolve to the LIGHT palette because every
-  // screen in this codebase still hardcodes `AppTheme.xxx` instead of reading
-  // from `Theme.of(context)` — meaning dark mode doesn't actually change
-  // in-screen colors today, even though the ThemeData for dark exists and
-  // the toggle in the profile screen appears to work. We are migrating this
-  // screen-by-screen (next files in the plan); once every screen is switched
-  // over to context-aware colors, these aliases will be removed.
+  // ---- Back-compat aliases (a few call sites — e.g. static `const` swatch
+  // widgets — still use these directly and always get the LIGHT palette).
+  // Prefer the context-aware helpers below (`AppTheme.bg(context)` etc.) in
+  // every screen build() method so dark mode actually takes effect.
   static const Color bgMain = bgMainLight;
   static const Color bgCard = bgCardLight;
   static const Color textPrimary = textPrimaryLight;
   static const Color textSecondary = textSecondaryLight;
   static const Color border = borderLight;
+
+  // ---- BUGFIX: context-aware color helpers ----
+  // Every screen used to reference the static `AppTheme.bgMain` /
+  // `.textPrimary` / `.textSecondary` / `.border` / `.bgCard` constants
+  // above directly, which are permanently pinned to the LIGHT palette.
+  // Toggling dark mode in Profile correctly flips `MaterialApp.themeMode`
+  // (so native widgets like AppBar/ElevatedButton/TextField do go dark),
+  // but every custom `Container`/`Text` using those static constants stayed
+  // light — a half-dark, broken-looking UI. These helpers read the actual
+  // resolved `Theme.of(context).brightness` so screens can pick the right
+  // light/dark token. Screens should call `AppTheme.bg(context)` etc.
+  // instead of `AppTheme.bgMain` etc. going forward.
+  static bool isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
+
+  static Color bg(BuildContext context) => isDark(context) ? bgMainDark : bgMainLight;
+  static Color card(BuildContext context) => isDark(context) ? bgCardDark : bgCardLight;
+  static Color text(BuildContext context) => isDark(context) ? textPrimaryDark : textPrimaryLight;
+  static Color textMuted(BuildContext context) => isDark(context) ? textSecondaryDark : textSecondaryLight;
+  static Color line(BuildContext context) => isDark(context) ? borderDark : borderLight;
+  static Color inputBg(BuildContext context) => isDark(context) ? inputBgDark : inputBgLight;
+  static Color tagBg(BuildContext context) => isDark(context) ? tagBgDark : tagBgLight;
+  static Color tagText(BuildContext context) => isDark(context) ? tagTextDark : tagTextLight;
+  static Color header(BuildContext context) => isDark(context) ? bgHeaderDark : bgHeaderLight;
 
   // ---- Radii (--radius / --radius-sm / --radius-lg) ----
   static const double radius = 14;
@@ -193,6 +212,8 @@ class AppTheme {
         return isDark ? (statusDeliveredBgDark, accent) : (statusDeliveredBgLight, statusDeliveredTextLight);
       case 'processing':
         return isDark ? (statusProcessingBgDark, statusProcessingTextDark) : (statusProcessingBgLight, statusProcessingTextLight);
+      case 'cancelled':
+        return isDark ? (const Color(0xFF3A1414), danger) : (const Color(0xFFFFE0E0), danger);
       default:
         return isDark ? (bgCardDark, textSecondaryDark) : (bgCardLight, textSecondaryLight);
     }

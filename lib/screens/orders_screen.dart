@@ -15,7 +15,7 @@ class OrdersScreen extends StatelessWidget {
     final lang = app.lang;
 
     return Container(
-      color: AppTheme.bgMain,
+      color: AppTheme.bg(context),
       child: Column(
         children: [
           Padding(
@@ -23,7 +23,7 @@ class OrdersScreen extends StatelessWidget {
             child: Row(
               children: [
                 Text('📦 ${S.t('orders', lang)}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
               ],
             ),
           ),
@@ -46,9 +46,9 @@ class OrdersScreen extends StatelessWidget {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: AppTheme.bgCard,
+                              color: AppTheme.card(context),
                               borderRadius: BorderRadius.circular(AppTheme.radius),
-                              border: Border.all(color: AppTheme.border),
+                              border: Border.all(color: AppTheme.line(context)),
                               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10)],
                             ),
                             child: Column(
@@ -58,13 +58,13 @@ class OrdersScreen extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text('#${o['id']}',
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textSecondary)),
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted(context))),
                                     _StatusBadge(status: status, lang: lang),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
                                 Text(itemsSummary.isEmpty ? '—' : itemsSummary,
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.text(context))),
                                 const SizedBox(height: 4),
                                 Text(S.formatPrice((o['total'] as num?) ?? 0, lang),
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.brand)),
@@ -78,12 +78,18 @@ class OrdersScreen extends StatelessWidget {
                                   Padding(
                                     padding: const EdgeInsets.only(top: 2),
                                     child: Text('${o['paymentMethod']}',
-                                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textSecondary)),
+                                        style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted(context))),
+                                  ),
+                                if (status == 'cancelled' && (o['cancelReason'] as String?)?.isNotEmpty == true)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text('❌ ${o['cancelReason']}',
+                                        style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted(context))),
                                   ),
                                 if (o['date'] != null) ...[
                                   const SizedBox(height: 6),
                                   Text(_formatDate(o['date'].toString()),
-                                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
                                 ],
                               ],
                             ),
@@ -118,6 +124,7 @@ class _StatusBadge extends StatelessWidget {
     final label = switch (status) {
       'delivered' => lang == 'am' ? 'ደርሷል' : 'Delivered',
       'processing' => lang == 'am' ? 'በሂደት ላይ' : 'Processing',
+      'cancelled' => S.t('cancelled', lang),
       _ => lang == 'am' ? 'በመጠባበቅ ላይ' : 'Pending',
     };
     return Container(
@@ -142,10 +149,10 @@ class _EmptyState extends StatelessWidget {
         children: [
           Text(emoji, style: const TextStyle(fontSize: 56)),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
           if (sub.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(sub, style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
+            Text(sub, style: TextStyle(fontSize: 14, color: AppTheme.textMuted(context))),
           ],
         ],
       ),

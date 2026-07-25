@@ -23,9 +23,9 @@ class ProductCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.bgCard,
+          color: AppTheme.card(context),
           borderRadius: BorderRadius.circular(AppTheme.radius),
-          border: Border.all(color: AppTheme.border),
+          border: Border.all(color: AppTheme.line(context)),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.10), blurRadius: 16, offset: const Offset(0, 4))],
         ),
         clipBehavior: Clip.antiAlias,
@@ -78,7 +78,7 @@ class ProductCard extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(liked ? Icons.favorite : Icons.favorite_border,
-                            color: liked ? AppTheme.danger : AppTheme.textSecondary, size: 15),
+                            color: liked ? AppTheme.danger : AppTheme.textMuted(context), size: 15),
                       ),
                     ),
                   ),
@@ -98,7 +98,7 @@ class ProductCard extends StatelessWidget {
                       product.displayName(app.lang),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary, height: 1.4),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.text(context), height: 1.4),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
@@ -112,7 +112,7 @@ class ProductCard extends StatelessWidget {
                             Text(S.formatPrice(product.price, app.lang),
                                 style: const TextStyle(
                                     decoration: TextDecoration.lineThrough,
-                                    color: AppTheme.textSecondary,
+                                    color: AppTheme.textMuted(context),
                                     fontSize: 11)),
                         ],
                       ),

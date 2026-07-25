@@ -5,12 +5,16 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
+import '../widgets/offline_overlay.dart';
+import '../services/firebase_service.dart';
+import '../services/faq_matcher.dart';
 
 /// Ported from #screen-help-center / renderHelpCenter() chatbot in
-/// main-ui.js. Uses the same assets/faq_data.json bundled with the app
-/// (fallback source in the PWA too) with a simplified keyword-overlap
-/// scorer standing in for the full stemmer/synonym-expansion pipeline —
-/// good enough to route common questions to the right FAQ answer.
+/// main-ui.js. FAQs load from Firebase (settings/faq) first, falling
+/// back to the bundled assets/faq_data.json — same order as the PWA.
+/// Matching uses the full ported pipeline in faq_matcher.dart (Amharic
+/// normalization, stemming, synonym expansion — same as matchFaqKeyword()
+/// in main-ui.js).
 class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
 
@@ -34,9 +38,21 @@ const _categories = [
   ('delivery', '🚚', 'ደሊቨሪ', 'Delivery'),
   ('products', '🛍️', 'ምርቶች', 'Products'),
   ('cart', '🛒', 'ጋሪ', 'Cart'),
+  // Added to match HC_CATEGORIES in main-ui.js — the web app's FAQ set
+  // gained 13 wallet/coin questions (faq_051–faq_063) that need their
+  // own browsable category, otherwise they're only reachable via a
+  // lucky free-text match.
+  ('wallet', '💰', 'ዋሌት / ኮይን', 'Wallet / Coins'),
   ('security', '🔒', 'ደህንነት', 'Security'),
   ('general', 'ℹ️', 'አጠቃላይ', 'General'),
 ];
+
+/// Ported from `HC_SUPPORT_CATEGORIES` in main-ui.js — FAQ categories
+/// where the bot also offers a "Customer Support team" escalation button
+/// alongside the FAQ answer, since these topics are the most likely to
+/// need a real human (order status, delivery, payment issues, and now
+/// wallet/coin issues since real money is involved).
+const _supportCategories = {'orders', 'delivery', 'payment', 'wallet'};
 
 class _HelpCenterScreenState extends State<HelpCenterScreen> {
   List<Map<String, dynamic>> _faqs = [];
@@ -52,12 +68,18 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   }
 
   Future<void> _load() async {
+    // Firebase first (settings/faq) — matches loadFaqFromFirebase() in
+    // main-ui.js, so FAQ edits from the admin panel reach the app without
+    // a store release. Bundled assets/faq_data.json is only the fallback.
     try {
-      final raw = await rootBundle.loadString('assets/faq_data.json');
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      _faqs = map.entries.map((e) => {'id': e.key, ...(e.value as Map<String, dynamic>)}).toList();
+      final remote = await FirebaseService().fetchFaqs();
+      if (remote != null && remote.isNotEmpty) {
+        _faqs = remote;
+      } else {
+        _faqs = await _loadBundledFaqs();
+      }
     } catch (_) {
-      _faqs = [];
+      _faqs = await _loadBundledFaqs();
     }
     final lang = mounted ? context.read<AppState>().lang : 'am';
     setState(() {
@@ -65,6 +87,16 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       _messages.add(_ChatMsg.bot(S.t('hc_greeting_1', lang)));
       _messages.add(_ChatMsg.bot(S.t('hc_greeting_2', lang), chips: _categoryChips(lang)));
     });
+  }
+
+  Future<List<Map<String, dynamic>>> _loadBundledFaqs() async {
+    try {
+      final raw = await rootBundle.loadString('assets/faq_data.json');
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return map.entries.map((e) => {'id': e.key, ...(e.value as Map<String, dynamic>)}).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   List<Map<String, dynamic>> _categoryChips(String lang) {
@@ -84,55 +116,128 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         _messages.add(_ChatMsg.user('${chip['emoji']} ${chip['label']}'));
         _messages.add(_ChatMsg.bot(S.t('hc_faq_chips_label', lang), chips: _questionsForCategory(chip['id'], lang)));
       });
+    } else if (chip['kind'] == 'support') {
+      _showSupportStep(lang);
+    } else if (chip['kind'] == 'send_to_admin') {
+      _openAdminForm(lang);
     } else {
       final faq = _faqs.firstWhere((f) => f['id'] == chip['id'], orElse: () => {});
       if (faq.isEmpty) return;
       final answer = lang == 'en' ? (faq['answer_en'] ?? faq['answer']) : faq['answer'];
       setState(() {
         _messages.add(_ChatMsg.user(chip['label'] as String));
-        _messages.add(_ChatMsg.bot(answer.toString(), chips: _categoryChips(lang)));
+        _messages.add(_ChatMsg.bot(answer.toString(),
+            chips: _answerChips(faq['category'] as String?, lang)));
       });
     }
     _scrollToBottom();
   }
 
-  /// Simplified stand-in for the JS scoreAgainst()/expandQuery() pipeline:
-  /// counts keyword/question/answer token overlap rather than full
-  /// Amharic stemming + synonym expansion.
-  Map<String, dynamic>? _bestMatch(String input, String lang) {
-    final q = input.toLowerCase().trim();
-    if (q.isEmpty) return null;
-    final tokens = q.split(RegExp(r'\s+')).where((t) => t.length > 1).toList();
-
-    Map<String, dynamic>? best;
-    int bestScore = 0;
-    for (final faq in _faqs) {
-      final question = (lang == 'en' ? (faq['question_en'] ?? faq['question']) : faq['question']).toString().toLowerCase();
-      final answer = (lang == 'en' ? (faq['answer_en'] ?? faq['answer']) : faq['answer']).toString().toLowerCase();
-      final keywords = ((lang == 'en' ? faq['keywords_en'] : faq['keywords']) as List? ?? [])
-          .map((k) => k.toString().toLowerCase())
-          .toList();
-
-      int score = 0;
-      if (question == q) score += 100;
-      if (question.contains(q) && q.length > 2) score += 12;
-      for (final tok in tokens) {
-        if (question.contains(tok)) score += 4;
-        for (final kw in keywords) {
-          if (tok == kw) {
-            score += 8;
-          } else if (tok.contains(kw) || kw.contains(tok)) {
-            score += 4;
-          }
-        }
-        if (tok.length > 3 && answer.contains(tok)) score += 1;
-      }
-      if (score > bestScore) {
-        bestScore = score;
-        best = faq;
-      }
+  /// Ported from the inline "hc-support-btn" appended to matched answers
+  /// in main-ui.js: category chips as usual, but with a "Customer
+  /// Support team" chip prepended when the FAQ's category is one of
+  /// `_supportCategories`.
+  List<Map<String, dynamic>> _answerChips(String? category, String lang) {
+    final chips = _categoryChips(lang);
+    if (category != null && _supportCategories.contains(category)) {
+      return [
+        {'kind': 'support', 'label': S.t('hc_contact_support', lang)},
+        ...chips,
+      ];
     }
-    return bestScore >= 4 ? best : null;
+    return chips;
+  }
+
+  /// Ported from hcShowSupportStep() in main-ui.js.
+  void _showSupportStep(String lang) {
+    setState(() {
+      _messages.add(_ChatMsg.bot(
+        S.t('hc_contact_support_msg', lang),
+        chips: [
+          {'kind': 'send_to_admin', 'label': S.t('hc_send_to_admin_btn', lang)},
+        ],
+      ));
+    });
+    _scrollToBottom();
+  }
+
+  /// Ported from hcShowAdminForm()/hcSendToAdmin() in main-ui.js — shows
+  /// a small form (as a modal bottom sheet here rather than an inline
+  /// textarea appended to the chat, since Flutter's ListView of
+  /// stateless chat bubbles isn't a natural place for a live text
+  /// input) and pushes to Firebase `support/` with the same 24h
+  /// per-phone rate limit as the web app.
+  Future<void> _openAdminForm(String lang) async {
+    final ctrl = TextEditingController();
+    bool sending = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(S.t('hc_admin_form_title', lang), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: S.t('hc_admin_placeholder', lang),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.brand),
+                onPressed: sending
+                    ? null
+                    : () async {
+                        final msg = ctrl.text.trim();
+                        if (msg.isEmpty) {
+                          ScaffoldMessenger.of(sheetContext)
+                              .showSnackBar(SnackBar(content: Text(S.t('hc_type_msg', lang))));
+                          return;
+                        }
+                        if (!await requireOnlineOrWarn(sheetContext, lang)) return;
+                        setSheetState(() => sending = true);
+                        final err = await context.read<AppState>().sendSupportMessage(msg);
+                        if (!mounted) return;
+                        if (err == null) {
+                          Navigator.of(sheetContext).pop();
+                          setState(() => _messages.add(_ChatMsg.bot(S.t('hc_admin_sent', lang))));
+                          _scrollToBottom();
+                        } else {
+                          setSheetState(() => sending = false);
+                          final toast = err == 'rate_limited' ? S.t('hc_rate_limit', lang) : S.t('hc_admin_error', lang);
+                          ScaffoldMessenger.of(sheetContext).showSnackBar(SnackBar(content: Text(toast)));
+                        }
+                      },
+                child: sending
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white))
+                    : Text(S.t('hc_admin_send', lang), style: const TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Ported from matchFaqKeyword() in main-ui.js — Amharic normalization,
+  /// morphological stemming, and synonym expansion, via faq_matcher.dart.
+  Map<String, dynamic>? _bestMatch(String input, String lang) {
+    return bestFaqMatch(_faqs, input, lang);
   }
 
   void _send() {
@@ -146,7 +251,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     setState(() {
       if (match != null) {
         final answer = lang == 'en' ? (match['answer_en'] ?? match['answer']) : match['answer'];
-        _messages.add(_ChatMsg.bot(answer.toString(), chips: _categoryChips(lang)));
+        _messages.add(_ChatMsg.bot(answer.toString(), chips: _answerChips(match['category'] as String?, lang)));
       } else {
         _messages.add(_ChatMsg.bot(S.t('hc_no_match', lang), chips: _categoryChips(lang)));
       }
@@ -168,7 +273,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     final lang = context.watch<AppState>().lang;
 
     return Scaffold(
-      backgroundColor: AppTheme.bgMain,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         title: Text(S.t('hc_title', lang)),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.of(context).pop()),
@@ -203,12 +308,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: m.fromUser ? AppTheme.brand : AppTheme.bgCard,
+                color: m.fromUser ? AppTheme.brand : AppTheme.card(context),
                 borderRadius: BorderRadius.circular(AppTheme.radius),
-                border: m.fromUser ? null : Border.all(color: AppTheme.border),
+                border: m.fromUser ? null : Border.all(color: AppTheme.line(context)),
               ),
               child: Text(m.text,
-                  style: TextStyle(color: m.fromUser ? Colors.white : AppTheme.textPrimary, fontSize: 14, height: 1.4)),
+                  style: TextStyle(color: m.fromUser ? Colors.white : AppTheme.text(context), fontSize: 14, height: 1.4)),
             ),
           ),
           if (m.chips != null && m.chips!.isNotEmpty)
@@ -237,9 +342,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       top: false,
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: const BoxDecoration(
-          color: AppTheme.bgCard,
-          border: Border(top: BorderSide(color: AppTheme.border)),
+        decoration: BoxDecoration(
+          color: AppTheme.card(context),
+          border: Border(top: BorderSide(color: AppTheme.line(context))),
         ),
         child: Row(
           children: [
@@ -249,7 +354,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 decoration: InputDecoration(
                   hintText: S.t('hc_input_placeholder', lang),
                   filled: true,
-                  fillColor: AppTheme.bgMain,
+                  fillColor: AppTheme.bg(context),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 ),

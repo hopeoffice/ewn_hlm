@@ -1,23 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../l10n/strings.dart';
+import '../services/wallet_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_sheet.dart';
 import 'wallet_screen.dart';
 import 'referral_screen.dart';
 import 'help_center_screen.dart';
+import 'edit_profile_screen.dart';
 
 /// Ported from #screen-profile / .profile-header / .menu-list /
 /// .menu-item in index.html + style.css.
+///
+/// BUGFIX: this screen — the one place the language switcher itself lives
+/// — used to be entirely hardcoded Amharic. Switching to English changed
+/// every other screen but left this one (and the sub-label showing the
+/// *current* language) as the only inconsistent bit. All labels now go
+/// through `S.t()` / `app.lang`.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final lang = app.lang;
 
     return Container(
-      color: AppTheme.bgMain,
+      color: AppTheme.bg(context),
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -50,7 +61,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(app.user?.name ?? 'እንግዳ',
+                Text(app.user?.name ?? S.t('guest', lang),
                     style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                 Text(app.user?.phone ?? '',
                     style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
@@ -65,7 +76,8 @@ class ProfileScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       onPressed: () => showAuthSheet(context),
-                      child: const Text('ግባ / ይመዝገቡ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: Text(S.t('login_btn', lang),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ),
               ],
@@ -76,9 +88,9 @@ class ProfileScreen extends StatelessWidget {
           Container(
             margin: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.bgCard,
+              color: AppTheme.card(context),
               borderRadius: BorderRadius.circular(AppTheme.radius),
-              border: Border.all(color: AppTheme.border),
+              border: Border.all(color: AppTheme.line(context)),
               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12)],
             ),
             clipBehavior: Clip.antiAlias,
@@ -86,31 +98,45 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 _MenuItem(
                   emoji: '💰',
-                  title: 'የኔ ዋሌት',
-                  sub: app.isAuthenticated ? '${app.coins} coin ፣ ቁጠባ እና ቦነስ' : 'coin፣ ቁጠባ እና ቦነስ',
+                  title: S.t('my_account', lang),
+                  sub: app.isAuthenticated ? '${app.coins} ${S.t('my_account_sub', lang)}' : S.t('my_account_sub', lang),
                   onTap: () => _requireAuth(context, app, () =>
                       Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WalletScreen()))),
                 ),
                 _MenuItem(
+                  emoji: '👤',
+                  title: S.t('edit_profile_menu', lang),
+                  sub: S.t('edit_profile_menu_sub', lang),
+                  onTap: () => _requireAuth(context, app, () =>
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EditProfileScreen()))),
+                ),
+                _MenuItem(
                   emoji: '🎁',
-                  title: 'ወዳጅዎን ያጋሩ፣ ያትርፉ',
-                  sub: app.isAuthenticated ? '${app.referralCount} ሰው ጋብዘዋል' : 'ጓደኛዎን ሳቡ ሽልማት ያግኙ',
+                  title: S.t('refer', lang),
+                  sub: app.isAuthenticated
+                      ? S.t('people_invited', lang).replaceAll('{n}', '${app.referralCount}')
+                      : S.t('refer_sub', lang),
                   onTap: () => _requireAuth(context, app, () =>
                       Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen()))),
                 ),
-                _MenuItem(emoji: '🌐', title: 'ቋንቋ', sub: app.lang == 'am' ? 'አማርኛ' : 'English', onTap: () => _showLanguageSheet(context, app)),
+                _MenuItem(
+                  emoji: '🌐',
+                  title: S.t('language', lang),
+                  sub: lang == 'am' ? 'አማርኛ' : 'English',
+                  onTap: () => _showLanguageSheet(context, app),
+                ),
                 _MenuItem(
                   emoji: '🎧',
-                  title: 'የእርዳታ ማዕከል',
-                  sub: 'እርዳታ ያግኙ',
+                  title: S.t('help', lang),
+                  sub: S.t('help_sub', lang),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
                 ),
                 _ThemeToggleItem(app: app),
                 if (app.isAuthenticated)
                   _MenuItem(
                     emoji: '🚪',
-                    title: 'ውጣ',
-                    sub: 'ከሂሳብዎ ይውጡ',
+                    title: S.t('logout', lang),
+                    sub: S.t('logout_sub', lang),
                     danger: true,
                     isLast: true,
                     onTap: () => app.logout(),
@@ -119,11 +145,22 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
 
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Center(
-              child: Text('Ewn Hlm v1.0 | እውን ህልም ©2025',
-                  style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+              child: Column(
+                children: [
+                  Text(S.t('app_footer', lang), style: TextStyle(fontSize: 11, color: AppTheme.textMuted(context))),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () => launchUrl(Uri.parse(WalletService.privacyPolicyUrl), mode: LaunchMode.externalApplication),
+                    child: Text(
+                      S.t('privacy_policy_menu', lang),
+                      style: TextStyle(fontSize: 11, color: AppTheme.textMuted(context), decoration: TextDecoration.underline),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -140,6 +177,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _showLanguageSheet(BuildContext context, AppState app) {
+    final lang = app.lang;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -147,9 +185,9 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('ቋንቋ ይምረጡ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(S.t('select_language', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             ListTile(
               leading: const Text('🇪🇹', style: TextStyle(fontSize: 20)),
@@ -184,12 +222,13 @@ class _ThemeToggleItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = app.lang;
     final isDark = app.themeMode == ThemeMode.dark;
     return InkWell(
       onTap: () => app.toggleTheme(),
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.border))),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.line(context)))),
         child: Row(
           children: [
             Container(
@@ -200,13 +239,13 @@ class _ThemeToggleItem extends StatelessWidget {
               child: const Text('🌙', style: TextStyle(fontSize: 18)),
             ),
             const SizedBox(width: 14),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('ቀለም ገጽታ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-                  SizedBox(height: 2),
-                  Text('ብርሃን / ጨለማ ቅርጸት', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                  Text(S.t('theme', lang), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.text(context))),
+                  const SizedBox(height: 2),
+                  Text(S.t('theme_sub', lang), style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
                 ],
               ),
             ),
@@ -247,7 +286,7 @@ class _MenuItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: isLast ? null : const Border(bottom: BorderSide(color: AppTheme.border)),
+          border: isLast ? null : Border(bottom: BorderSide(color: AppTheme.line(context))),
         ),
         child: Row(
           children: [
@@ -268,13 +307,13 @@ class _MenuItem extends StatelessWidget {
                 children: [
                   Text(title,
                       style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600, color: danger ? AppTheme.danger : AppTheme.textPrimary)),
+                          fontSize: 14, fontWeight: FontWeight.w600, color: danger ? AppTheme.danger : AppTheme.text(context))),
                   const SizedBox(height: 2),
-                  Text(sub, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                  Text(sub, style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
                 ],
               ),
             ),
-            if (!danger) const Icon(Icons.chevron_right, color: AppTheme.textSecondary, size: 18),
+            if (!danger) Icon(Icons.chevron_right, color: AppTheme.textMuted(context), size: 18),
           ],
         ),
       ),

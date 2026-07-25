@@ -68,6 +68,16 @@ class Product {
     final rawCategory = p['category'] as String? ?? '';
     final category = _categoryMigration[rawCategory] ?? rawCategory;
 
+    // BUGFIX: mirror `p.discountedPrice || null` from normalizeProduct() in
+    // main-config.js. JS's `||` treats 0 (and any other falsy value) as
+    // "no discount". Without this, a Firestore doc with `discountedPrice: 0`
+    // (e.g. an admin form that defaults an empty discount field to 0
+    // instead of omitting it) would make `displayPrice` return 0 — showing
+    // "0 ETB" everywhere the price is used: product card, discount
+    // carousel, product detail, cart, and checkout totals.
+    final rawDiscount = (p['discountedPrice'] as num?)?.toDouble();
+    final discountedPrice = (rawDiscount != null && rawDiscount > 0) ? rawDiscount : null;
+
     return Product(
       id: id,
       name: p['name'] as String? ?? '',
@@ -77,7 +87,7 @@ class Product {
       description: p['description'] as String?,
       descriptionAm: p['descriptionAm'] as String?,
       price: (p['price'] as num?)?.toDouble() ?? 0,
-      discountedPrice: (p['discountedPrice'] as num?)?.toDouble(),
+      discountedPrice: discountedPrice,
       category: category,
       images: images,
       colors: (p['colors'] as List?)?.cast<String>() ?? [],

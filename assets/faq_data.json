@@ -815,105 +815,83 @@
   "faq_032": {
     "category": "security",
     "question": "Account ሌላ ሰው ሊጠቀምበት ይችላልን?",
-    "answer": "የእርስዎ ደህንነት ለኛ ቅድሚያ ነው! 🔐 Account ዎ በOTP ብቻ የተቆለፈ ነው — ስልክዎን ይጠብቁ። ስጋት ቢሰማዎት የደንበኞች አገልግሎታችንን ያግኙ፣ በፍጥነት እንረዳዎታለን።",
+    "answer": "🔐 የእርስዎ ደህንነት ለእውን ህልም ድርጅት ቅድሚያ ነው! Account ዎ በስልክ ቁጥርዎ እና በ4-ዲጂት ፓስዎርድዎ የተቆለፈ ነው። ፓስዎርድዎን ለማንም አያካፍሉ፣ እና ተጨማሪ ደህንነት ስለሚያስፈልጋቸው (እንደ ኮይን ግዢ/ሽያጭ/ማስተላለፍ) ግብይቶች ላይ ደግመው ፓስዎርድ እንዲያስገቡ ይጠየቃሉ። ማንኛውም አጠራጣሪ ነገር ካስተዋሉ ወዲያውኑ 'የእርዳታ ማዕከል' በኩል ያሳውቁን።",
     "keywords": [
-      "security",
-      "ደህንነት",
-      "access",
-      "hacked",
-      "stolen",
-      "ሌላ ሰው ገብቷል",
-      "ተገብቷል"
+      "account ደህንነት",
+      "ሌላ ሰው",
+      "ፓስዎርድ",
+      "ተጠቅሞ",
+      "security"
     ],
     "question_en": "Can someone else access my account?",
-    "answer_en": "Your security matters most to us! 🔐 Your account is locked behind OTP — just keep your phone safe. If anything feels off, contact our Customer Support and we'll help right away.",
+    "answer_en": "🔐 Your security is a top priority for Ewn Hlm. Your account is protected by your phone number and 4-digit password. Never share your password with anyone, and for extra-sensitive actions (like buying, selling, or transferring coins) you'll be asked to re-enter your password as an added safeguard. If you notice anything suspicious, contact us via the 'Help Center' right away.",
     "keywords_en": [
-      "security",
-      "access",
-      "hacked",
-      "unauthorized",
-      "protect",
-      "someone logged in",
-      "suspicious activity"
+      "account security",
+      "someone else",
+      "password",
+      "unauthorized access",
+      "security"
     ]
   },
   "faq_033": {
     "category": "security",
-    "question": "የክፍያ መረጃዬ ደህንነቱ የተጠበቀ ነው?",
-    "answer": "ሙሉ በሙሉ ደህና ነው፣ ያለ ምንም ስጋት! 🔒 ክፍያ ቀጥታ ወደ Bank ብቻ ነው የሚሄደው — የካርድ ወይም Bank ዝርዝርዎ በፍጹም ከኛ ጋር አይቀመጥም።",
+    "question": "የክፍያ እና የባንክ መረጃዬ ደህንነቱ የተጠበቀ ነው?",
+    "answer": "🔒 አዎ! ትዕዛዝ ሲገዙ ወይም ኮይን ሲገዙ፣ ክፍያውን በቀጥታ ወደ ባንክ የሚያደርጉት እርስዎ ነዎት እና የክፍያ ደረሰኝ ብቻ ነው የምንቀበለው — የካርድ መረጃዎ በፍጹም አይቀመጥም። ኮይን በሚሸጡበት ጊዜ ብቻ፣ ገንዘቡ እንዲላክልዎት የባንክ ሂሳብ መረጃዎን መስጠት ያስፈልጋል — ይህ መረጃ ለዚያ ግብይት ብቻ ጥቅም ላይ የሚውል ሲሆን ደህንነቱ በተጠበቀ ሁኔታ ይያዛል። ዝርዝር ለማወቅ 'ፕራይቬሲ ፖሊሲ'ን ይመልከቱ።",
     "keywords": [
-      "secure",
-      "safety",
-      "data",
-      "bank",
-      "ደህንነት",
+      "ክፍያ ደህንነት",
+      "ባንክ መረጃ",
+      "ካርድ",
       "payment security",
-      "መረጃ ደህንነት",
-      "ካርድ ይቀመጣል ወይ"
+      "bank"
     ],
-    "question_en": "Is my payment information secure?",
-    "answer_en": "Completely safe, no need to worry! 🔒 Payments go directly to the bank — we never, ever store your card or bank details.",
+    "question_en": "Is my payment and bank information secure?",
+    "answer_en": "🔒 Yes! When you buy products or coins, you send payment directly to the bank yourself, and we only receive your payment receipt — your card details are never stored with us. Only when you sell coins do you need to provide your bank account details so we can send you the payout — this is used solely for that transaction and is kept secure. See our 'Privacy Policy' for full details.",
     "keywords_en": [
-      "secure",
-      "safe",
-      "payment",
-      "bank",
-      "data",
-      "privacy",
-      "data privacy",
-      "card stored"
+      "payment security",
+      "bank details",
+      "card information",
+      "secure payment"
     ]
   },
   "faq_034": {
-    "category": "general",
-    "question": "ፓስዎርድ ጠፋብኝ እንዴት ላድስ?",
-    "answer": "ምንም አይጨነቁ — የእውን ህልም አፕ ፓስዎርድ አያስፈልገውም! 😊 OTP (ስልክ ቁጥር) ብቻ ይጠቀማል፣ ስልክ ቁጥርዎን ያስገቡ እና OTP ይምጣልዎ።",
+    "category": "security",
+    "question": "ፓስዎርድ ጠፋብኝ ወይም መቀየር እፈልጋለሁ — እንዴት ላድስ?",
+    "answer": "😊 ምንም አይጨነቁ! የመግቢያ ገጹ ላይ ስልክ ቁጥርዎን አስገብተው 'ፓስዎርድ ረሳሁ?' ን ይጫኑ። ኢሜልዎን ካስገቡ በኋላ ወደ ኢሜልዎ የ5-ዲጂት ኮድ ይላካል፣ ያንን ኮድ አስገብተው አዲስ 4-ዲጂት ፓስዎርድ ማዘጋጀት ይችላሉ። ይህ አሁን ካለው ፓስዎርድዎ ውጪ ለመቀየርም ተመሳሳይ መንገድ ነው የሚሰራው — በአፑ ውስጥ ተጨማሪ 'Change Password' ቅንብር የለም።",
     "keywords": [
-      "password",
-      "ፓስዎርድ",
-      "ጠፋ",
-      "forgot",
-      "reset",
-      "OTP",
-      "ኮድ ጠፋ",
-      "ግባት ችግር"
+      "ፓስዎርድ ጠፋብኝ",
+      "forgot password",
+      "ፓስዎርድ ቀይር",
+      "reset password",
+      "ኮድ"
     ],
-    "question_en": "I forgot my password — how do I reset it?",
-    "answer_en": "No need to worry — Ewn Hlm doesn't even use passwords! 😊 We use OTP only — just enter your phone number and receive a one-time code.",
+    "question_en": "I forgot my password (or want to change it) — how do I reset it?",
+    "answer_en": "😊 No worries! On the login screen, enter your phone number and tap 'Forgot Password?'. After entering your email, a 5-digit code is sent there — enter that code to set a new 4-digit password. This is also the way to change your password even if you remember it — there isn't a separate 'Change Password' setting in the app.",
     "keywords_en": [
-      "password",
-      "forgot",
-      "reset",
-      "otp",
-      "login",
-      "cant login",
-      "lost access"
+      "forgot password",
+      "reset password",
+      "change password",
+      "verification code"
     ]
   },
   "faq_035": {
-    "category": "general",
-    "question": "OTP አልደረሰኝም",
-    "answer": "ችላ አይበሉ፣ ትንሽ ይታገሱ! ⏱️ OTP ለመድረስ 1-2 ደቂቃ ይጠብቁ። SMS ካልደረሰ ስልኩ ምልክት እንዳለው ያረጋግጡ ወይም ዳግም ይሞክሩ — እኛም እዚህ ነን ካስፈለገ!",
+    "category": "security",
+    "question": "የማረጋገጫ ኮድ (Email Code) ወደ ኢሜይሌ አልደረሰኝም",
+    "answer": "⏱️ ትንሽ ይታገሱ — አንዳንዴ ኮድ ለመድረስ 1-2 ደቂቃ ይወስዳል። ካልደረሰዎት 'Spam/Junk' ፎልደርዎን ያረጋግጡ፣ የገቡት ኢሜል ትክክል መሆኑን ያረጋግጡ፣ እና ከ2 ደቂቃ በኋላ 'ኮድ ላክ' ን ደግመው መጫን ይችላሉ። አሁንም ካልደረሰ 'የእርዳታ ማዕከል' በኩል ያግኙን።",
     "keywords": [
-      "OTP",
-      "አልደረሰ",
-      "SMS",
-      "code",
+      "ኮድ አልደረሰኝም",
+      "email code",
       "verification",
-      "ኮድ አልመጣ",
-      "መልዕክት የለም"
+      "spam",
+      "resend"
     ],
-    "question_en": "I didn't receive my OTP",
-    "answer_en": "Just hang in there a moment! ⏱️ Wait 1-2 minutes for the OTP. If it still doesn't arrive, check your signal and try again — we're here if you need more help!",
+    "question_en": "I didn't receive the email verification code",
+    "answer_en": "⏱️ Please wait a bit — the code can sometimes take 1-2 minutes to arrive. If it doesn't show up, check your Spam/Junk folder, confirm you entered the correct email address, and after 2 minutes you can tap 'Send Code' again to resend it. If it still doesn't arrive, reach out via the 'Help Center'.",
     "keywords_en": [
-      "otp",
-      "sms",
-      "code",
-      "not received",
+      "code not received",
+      "email code",
       "verification",
-      "login",
-      "code missing",
-      "no sms received"
+      "spam folder",
+      "resend code"
     ]
   },
   "faq_036": {
@@ -969,53 +947,41 @@
     ]
   },
   "faq_038": {
-    "category": "general",
+    "category": "security",
     "question": "ስልኬን ቀየርኩ — account ይጠፋልን?",
-    "answer": "ስልክ ቁጥርዎ ቀየሩ? ምንም ችግር የለውም — አዲሱን ቁጥር ይግቡ! ብቻ ያስታውሱ፣ ታሪክ በራስ-ሰር አይዛወርም ስለዚህ የደንበኞች አገልግሎታችንን ያግኙ እና በደስታ እናስተላልፍልዎታለን።",
+    "answer": "📱 ስልክ ቁጥርዎ የመግቢያ መታወቂያዎ (login ID) ስለሆነ፣ በአዲሱ ስልክ ቁጥር ብቻ ገብተው የቆየውን account ማግኘት አይችሉም — ስርአቱ አዲስ ስልክ ቁጥር እንደ አዲስ account ይቆጥረዋል። የቆየውን መረጃ (ትዕዛዝ ታሪክ፣ ኮይን ወዘተ) ወደ አዲሱ ቁጥር ለማዛወር፣ እባክዎ 'የእርዳታ ማዕከል' በኩል የቆየውን እና አዲሱን ስልክ ቁጥር ጨምረው ያሳውቁን፣ በእጅ እናዛውርልዎታለን።",
     "keywords": [
-      "ስልክ",
-      "ቀየርኩ",
-      "phone",
-      "change",
-      "number",
-      "ስልክ ለወጠ",
-      "ቁጥር ለወጠ"
+      "ስልክ ቀየርኩ",
+      "phone number changed",
+      "account ይጠፋል",
+      "transfer account"
     ],
     "question_en": "I changed my phone number — will my account be lost?",
-    "answer_en": "Changed your phone number? No problem — just log in with the new one! Just keep in mind, order history won't transfer automatically, so contact our Customer Support and we'll happily move it over for you.",
+    "answer_en": "📱 Since your phone number is your login ID, simply logging in with the new number won't bring back your old account — the system treats a new phone number as a new account. To move your existing data (order history, coins, etc.) to the new number, please contact us via the 'Help Center' with both your old and new phone numbers, and we'll transfer it manually.",
     "keywords_en": [
-      "phone",
-      "change",
-      "number",
-      "account",
-      "new phone",
+      "changed phone number",
+      "account transfer",
       "new number",
-      "switched phone"
+      "lost account"
     ]
   },
   "faq_039": {
-    "category": "general",
+    "category": "security",
     "question": "Account ዘጋሁ ወይም ሰረዝኩ ምን ይሆናል?",
-    "answer": "ይቅርታ ስለሚለዩን! 💔 Account ለመሰረዝ የደንበኞች አገልግሎታችንን ያነጋግሩ — ቅድሚያ ይህን ውሳኔ በደንብ ያስቡበት፣ ምክንያቱም ሁሉም መረጃ (ቀደም ያሉ ትዕዛዞች ጨምሮ) ይጠፋል።",
+    "answer": "💔 ይቅርታ ስለሚለዩን! Account ለመሰረዝ 'የእርዳታ ማዕከል' በኩል ያነጋግሩን። ክፍት/በመጠባበቅ ላይ ያለ የኮይን ግዢ/ሽያጭ/ማስተላለፍ ጥያቄ ካለ መጀመሪያ መጠናቀቅ አለበት። Account ከተሰረዘ ሁሉም መረጃዎ (ትዕዛዝ ታሪክ፣ ዋሌት/ኮይን ታሪክ ጨምሮ) በቋሚነት ይጠፋል — ውሳኔዎን በደንብ ያስቡበት። ዝርዝር ለማወቅ 'ፕራይቬሲ ፖሊሲ'ን ይመልከቱ።",
     "keywords": [
+      "account ሰረዝ",
       "delete account",
-      "ሰርዝ",
-      "close account",
-      "deactivate",
-      "ለቅቅ",
-      "ማቆም"
+      "መዝጋት",
+      "ሁሉም መረጃ ይጠፋል"
     ],
-    "question_en": "What happens if I delete my account?",
-    "answer_en": "Sorry to see you go! 💔 To delete your account, contact our Customer Support — just know that all data, including past orders, will be permanently removed, so take your time deciding.",
+    "question_en": "What happens if I close or delete my account?",
+    "answer_en": "💔 Sorry to see you go! To delete your account, contact us via the 'Help Center'. Any open or pending coin purchase/sale/transfer request must be completed first. Once deleted, all your data (including order history and wallet/coin history) is permanently removed — please take your time deciding. See our 'Privacy Policy' for more details.",
     "keywords_en": [
-      "delete",
-      "account",
-      "close",
-      "remove",
-      "deactivate",
-      "leave",
-      "quit",
-      "stop using"
+      "delete account",
+      "close account",
+      "all data removed",
+      "permanent deletion"
     ]
   },
   "faq_040": {
@@ -1170,9 +1136,9 @@
     ]
   },
   "faq_046": {
-    "category": "general",
+    "category": "wallet",
     "question": "Refer & Earn እንዴት ይሠራል?",
-    "answer": "ይህን ይወዱታል! 🎁 Profile → Refer & Earn ሄደው Referral Code ቅዱ፣ ለወዳጆችዎ ያጋሩ — ሁለታችሁም ሽልማት ታገኛላችሁ! ወዳጅነት ይክፋል!",
+    "answer": "ይህን ይወዱታል! 🎁 Profile → Refer & Earn ሄደው Referral Code ይቅዱ፣ ለወዳጆችዎ ያጋሩ። ወዳጅዎ በዚያ ኮድ ሲመዘገቡ 🪙 147 ኮይን ያገኛሉ (እስከ 30 ሰዎች ድረስ)፣ እርስዎም 🪙 100 ኮይን የ signup ማበረታቻ ያገኛሉ! ኮይኑ በቀጥታ 'የኔ ዋሌት' ገጽ ላይ ይታያል።",
     "keywords": [
       "refer",
       "earn",
@@ -1181,10 +1147,12 @@
       "bonus",
       "ሽልማት",
       "ኮድ አግኝ",
-      "ጓደኛ ጋብዝ"
+      "ጓደኛ ጋብዝ",
+      "147",
+      "ኮይን ስንት"
     ],
     "question_en": "How does Refer & Earn work?",
-    "answer_en": "You'll love this one! 🎁 Go to Profile → Refer & Earn, copy your referral code, and share it with friends — you both get rewarded! Sharing really does pay off!",
+    "answer_en": "You'll love this one! 🎁 Go to Profile → Refer & Earn, copy your referral code, and share it with friends. When a friend signs up using your code, you earn 🪙 147 coins (up to 30 people), and they get 🪙 100 coins as a signup bonus! Your coins show up right away on the 'My Wallet' page.",
     "keywords_en": [
       "refer",
       "earn",
@@ -1194,7 +1162,9 @@
       "friend",
       "share",
       "invite friend",
-      "get code"
+      "get code",
+      "147",
+      "how many coins"
     ]
   },
   "faq_047": {
@@ -1296,6 +1266,274 @@
       "support",
       "phone number",
       "email address"
+    ]
+  },
+  "faq_051": {
+    "category": "wallet",
+    "question": "ኮይን (Coin) ምንድን ነው?",
+    "answer": "🪙 ኮይን የገንዘብ ዋጋ ያለው ውስጣዊ ነጥብ ነው — 1 ኮይን = 0.068 ብር። ኮይን ሲመዘገቡ በነጻ (ማበረታቻ)፣ ጓደኛ ስትጋብዙ (ሪፈራል)፣ ወይም በገንዘብ ገዝተው ማግኘት ይችላሉ። ኮይን Checkout ላይ ቅናሽ ለማግኘት ወይም ወደ ብር መልሰው ለመሸጥ ይጠቅማል። 'የኔ ዋሌት' ገጽ ላይ ሁሉንም ማየት ይችላሉ።",
+    "keywords": [
+      "ኮይን",
+      "coin",
+      "ዋሌት",
+      "wallet",
+      "ኮይን ምንድን ነው",
+      "ነጥብ",
+      "ዋጋ"
+    ],
+    "question_en": "What is a Coin?",
+    "answer_en": "🪙 A Coin is an in-app point with real monetary value — 1 Coin = 0.068 ETB. You can earn coins for free when you sign up (bonus), when you invite friends (referral), or by purchasing them with money. Coins can be used for a discount at checkout, or sold back for cash. You can view everything on the 'My Wallet' page.",
+    "keywords_en": [
+      "coin",
+      "coins",
+      "wallet",
+      "what is a coin",
+      "points",
+      "value"
+    ]
+  },
+  "faq_052": {
+    "category": "wallet",
+    "question": "ኮይን እንዴት ማግኘት እችላለሁ?",
+    "answer": "🪙 ኮይን በ4 መንገዶች ማግኘት ይችላሉ፦ 1️⃣ ሲመዘገቡ 100 ኮይን በነጻ ያገኛሉ፣ 2️⃣ ጓደኛዎን ሲጋብዙ እና እሱ/እሷ ሲመዘገቡ 147 ኮይን ያገኛሉ (እስከ 30 ሰዎች ድረስ)፣ 3️⃣ በገንዘብ ገዝተው (Buy Coins)፣ 4️⃣ በ 'የኔ ዋሌት' ገጽ ላይ ልዩ ማበረታቻዎች ካሉ። ሁሉንም ማየትና መከታተል የሚችሉት 'የኔ ዋሌት' ገጽ ላይ ነው።",
+    "keywords": [
+      "ኮይን እንዴት አገኛለሁ",
+      "ማበረታቻ",
+      "ሪፈራል",
+      "ጋብዙ",
+      "ቦነስ",
+      "signup bonus"
+    ],
+    "question_en": "How can I earn coins?",
+    "answer_en": "🪙 You can earn coins in 4 ways: 1️⃣ Get 100 free coins when you sign up, 2️⃣ Get 147 coins whenever a friend you invite signs up (up to 30 people), 3️⃣ Buy coins with money, 4️⃣ Special bonuses shown on the 'My Wallet' page. You can track everything on the 'My Wallet' page.",
+    "keywords_en": [
+      "earn coins",
+      "signup bonus",
+      "referral bonus",
+      "invite friends",
+      "free coins"
+    ]
+  },
+  "faq_053": {
+    "category": "wallet",
+    "question": "ኮይን እንዴት እገዛለሁ (Buy Coins)?",
+    "answer": "🪙 'የኔ ዋሌት' ገጽ ላይ 'Buy Coins' የሚለውን ይምረጡ፣ መግዛት የሚፈልጉትን የብር መጠን ያስገቡ (ዝቅተኛው 1,500 ብር ነው) እና ክፍያዎን ይላኩ። ጥያቄዎ 'በመጠባበቅ ላይ (Pending)' ሆኖ ይታያል፣ ቡድናችን ክፍያዎን ካረጋገጠ በኋላ ኮይኑ በራስ-ሰር ወደ ዋሌትዎ ይገባል።",
+    "keywords": [
+      "ኮይን እገዛለሁ",
+      "buy coins",
+      "ኮይን ግዢ",
+      "ዝቅተኛ",
+      "1500",
+      "pending"
+    ],
+    "question_en": "How do I buy coins?",
+    "answer_en": "🪙 On the 'My Wallet' page, choose 'Buy Coins', enter the ETB amount you want to buy (minimum is 1,500 ETB), and send your payment. Your request will show as 'Pending' — once our team confirms your payment, the coins are added to your wallet automatically.",
+    "keywords_en": [
+      "buy coins",
+      "purchase coins",
+      "minimum",
+      "1500",
+      "pending"
+    ]
+  },
+  "faq_054": {
+    "category": "wallet",
+    "question": "የኮይን ግዢዬ ለምን 'በመጠባበቅ ላይ (Pending)' ይላል?",
+    "answer": "🕓 ማንኛውም Coin ግዢ ወይም ሽያጭ ጥያቄ በቡድናችን በእጅ (manually) መረጋገጥ አለበት፣ ስለዚህ ወዲያውኑ ጸድቆ አይታይም። ክፍያዎ ከተረጋገጠ በኋላ ኮይኑ ራሱ በራስ-ሰር ወደ ዋሌትዎ ይታከላል እና በ'Transaction History' ላይ 'ጸደቀ' ተብሎ ይታያል። ችግር ካጋጠመዎት ወይም ጊዜው ከረዘመ ከ 'Customer Support' ጋር ይገናኙ።",
+    "keywords": [
+      "pending",
+      "በመጠባበቅ",
+      "ለምን",
+      "ጸደቀ",
+      "approve"
+    ],
+    "question_en": "Why does my coin purchase show as 'Pending'?",
+    "answer_en": "🕓 Every Coin purchase or sale request is manually verified by our team, so it isn't approved instantly. Once your payment is confirmed, the coins are automatically added to your wallet and marked as 'Approved' in your Transaction History. If it's taking too long or something seems wrong, please contact Customer Support.",
+    "keywords_en": [
+      "pending",
+      "why pending",
+      "approved",
+      "waiting",
+      "delay"
+    ]
+  },
+  "faq_055": {
+    "category": "wallet",
+    "question": "ኮይኔን ወደ ብር እንዴት እሸጣለሁ (Sell Coins)?",
+    "answer": "💸 'የኔ ዋሌት' ገጽ ላይ 'Sell Coins' የሚለውን ይምረጡ (ዝቅተኛው 5,000 ኮይን ነው)፣ መሸጥ የሚፈልጉትን መጠን ያስገቡ እና የባንክ መረጃዎን ያስገቡ። ጥያቄዎ ተረጋግጦ ሲጸድቅ ገንዘቡ ወደ ባንክ ሂሳብዎ ይላካል።",
+    "keywords": [
+      "sell coins",
+      "ኮይን ሽያጭ",
+      "ወደ ብር",
+      "ዝቅተኛ ሽያጭ",
+      "5000"
+    ],
+    "question_en": "How do I sell my coins for cash?",
+    "answer_en": "💸 On the 'My Wallet' page, choose 'Sell Coins' (minimum 5,000 coins), enter the amount you want to sell, and provide your bank details. Once your request is verified and approved, the cash is sent to your bank account.",
+    "keywords_en": [
+      "sell coins",
+      "cash out",
+      "withdraw",
+      "minimum sell",
+      "5000"
+    ]
+  },
+  "faq_056": {
+    "category": "wallet",
+    "question": "ኮይን ለሌላ ሰው እንዴት አስተላልፋለሁ (Transfer)?",
+    "answer": "🔁 'የኔ ዋሌት' ገጽ ላይ 'Transfer Coins' ን ይምረጡ፣ የምትልኩለትን ሰው መረጃ እና መጠን ያስገቡ (ዝቅተኛው 5,000 ኮይን ነው)። ማስተላለፉን ለማረጋገጥ የመለያዎን ፓስዎርድ እንዲያስገቡ ይጠየቃሉ — ይህ ገንዘብ-ነክ ስለሆነ ተጨማሪ ደህንነት ነው። ⚠️ አድራሻውን በጥንቃቄ ያረጋግጡ፣ ከተላከ በኋላ መመለስ አስቸጋሪ ሊሆን ይችላል።",
+    "keywords": [
+      "transfer coins",
+      "ኮይን ማስተላለፍ",
+      "ወደ ሌላ ሰው",
+      "ፓስዎርድ",
+      "5000"
+    ],
+    "question_en": "How do I transfer coins to another person?",
+    "answer_en": "🔁 On the 'My Wallet' page, choose 'Transfer Coins', enter the recipient's details and amount (minimum 5,000 coins). You'll be asked to enter your account password to confirm — this is an extra security step since it involves money. ⚠️ Please double-check the recipient before sending, as reversing a transfer afterward can be difficult.",
+    "keywords_en": [
+      "transfer coins",
+      "send coins",
+      "password confirm",
+      "minimum transfer",
+      "5000"
+    ]
+  },
+  "faq_057": {
+    "category": "wallet",
+    "question": "በስህተት ለተሳሳተ ሰው ኮይን ካስተላለፍኩ ይመለስልኛል?",
+    "answer": "⚠️ ኮይን ማስተላለፍ የገንዘብ ግብይት ስለሆነ በጥንቃቄ መደረግ አለበት። ከተላከ በኋላ በራስ-ሰር መመለስ አይቻልም። ስህተት ከተፈጠረ ወዲያውኑ ወደ 'Customer Support' በመልእክት ያሳውቁን፣ ቡድናችን ጉዳዩን በተቻለ መጠን ይረዳል፣ ነገር ግን ማረጋገጫ ስለሚያስፈልግ ውጤቱ ላይ ዋስትና መስጠት አንችልም።",
+    "keywords": [
+      "በስህተት ላከሁ",
+      "ተመላሽ",
+      "ስህተት transfer",
+      "refund coin"
+    ],
+    "question_en": "If I transfer coins to the wrong person by mistake, can it be reversed?",
+    "answer_en": "⚠️ Transferring coins is a money transaction, so please double-check before confirming. Once sent, it cannot be automatically reversed. If a mistake happens, contact Customer Support right away with the details — our team will do their best to help, though we can't guarantee a resolution since it requires verification.",
+    "keywords_en": [
+      "sent by mistake",
+      "reverse transfer",
+      "wrong recipient",
+      "refund coins"
+    ]
+  },
+  "faq_058": {
+    "category": "wallet",
+    "question": "Checkout ላይ ኮይን እንዴት እጠቀማለሁ?",
+    "answer": "🛒 Checkout (ትዕዛዝ ማጠናቀቂያ) ገጽ ላይ በዋሌትዎ ውስጥ በቂ ኮይን ካለ (ቢያንስ 22,050 ኮይን ~ 1,499.4 ብር) አማራጩ በራስ-ሰር ይታያል፣ ኮይን ተጠቅመው ከትዕዛዝዎ ዋጋ ላይ ቅናሽ ማግኘት ይችላሉ። የመለያዎን ፓስዎርድ በማስገባት ማረጋገጥ ይጠበቅብዎታል።",
+    "keywords": [
+      "checkout coin",
+      "ቅናሽ",
+      "redeem",
+      "22050",
+      "ኮይን መጠቀም"
+    ],
+    "question_en": "How do I use coins at checkout?",
+    "answer_en": "🛒 At checkout, if you have enough coins in your wallet (minimum 22,050 coins ≈ 1,499.4 ETB), the option appears automatically and you can apply coins as a discount on your order total. You'll need to confirm with your account password.",
+    "keywords_en": [
+      "checkout coins",
+      "redeem coins",
+      "discount",
+      "22050",
+      "use coins"
+    ]
+  },
+  "faq_059": {
+    "category": "wallet",
+    "question": "ለምንድን ነው ኮይኔን Checkout ላይ መጠቀም ያልቻልኩት?",
+    "answer": "🪙 ኮይን በ Checkout ላይ ለመጠቀም ቢያንስ 22,050 ኮይን (~1,499.4 ብር ዋጋ) በዋሌትዎ ውስጥ ሊኖርዎት ይገባል። ከዚህ በታች ከሆነ አማራጩ አይታይም — ተጨማሪ ኮይን በመግዛት ወይም ጓደኛ በመጋበዝ መጠኑን መጨመር ይችላሉ።",
+    "keywords": [
+      "አልቻልኩም",
+      "ዝቅተኛ redeem",
+      "22050",
+      "የማይታይ",
+      "አጥር"
+    ],
+    "question_en": "Why can't I use my coins at checkout?",
+    "answer_en": "🪙 To use coins at checkout, you need at least 22,050 coins (≈1,499.4 ETB worth) in your wallet. Below that threshold, the option won't appear — you can buy more coins or invite friends to reach the minimum.",
+    "keywords_en": [
+      "can't redeem",
+      "minimum threshold",
+      "22050",
+      "option not showing"
+    ]
+  },
+  "faq_060": {
+    "category": "wallet",
+    "question": "ኮይን ስጠቀም/አስተላልፍ ለምን ፓስዎርድ ይጠይቀኛል?",
+    "answer": "🔒 ኮይን የገንዘብ ዋጋ ስላለው (ግዢ፣ ሽያጭ፣ ማስተላለፍ፣ Checkout redemption) እያንዳንዱ ግብይት ከመፈጸሙ በፊት የመለያዎን ፓስዎርድ በማስገባት ማረጋገጥ ያስፈልጋል። ይህ ሌላ ሰው ስልክዎን ቢያገኝ ገንዘብዎን እንዳይጠቀም የሚከላከል የደህንነት እርምጃ ነው። የመለያ ፓስዎርድ ከረሱ 'Forgot Password' የሚለውን ተጠቅመው ማደስ ይችላሉ።",
+    "keywords": [
+      "ፓስዎርድ ይጠይቃል",
+      "ደህንነት",
+      "ዋሌት ፓስዎርድ",
+      "forgot password"
+    ],
+    "question_en": "Why does using or transferring coins ask for my password?",
+    "answer_en": "🔒 Since coins have real monetary value (buying, selling, transferring, or redeeming at checkout), each transaction requires you to confirm with your account password first. This protects your money in case someone else gets access to your phone. If you've forgotten your password, you can reset it using 'Forgot Password'.",
+    "keywords_en": [
+      "password required",
+      "security",
+      "wallet password",
+      "forgot password"
+    ]
+  },
+  "faq_061": {
+    "category": "wallet",
+    "question": "በ'የኔ ዋሌት' ገጽ ላይ ያለው ግራፍ/ቻርት ምንድን ነው?",
+    "answer": "📊 ይህ ቻርት የኮይን ግዢ እና ሽያጭ ተመን (rate) በጊዜ ሂደት እንዴት እንደተለወጠ ያሳያል — ልክ እንደ ገበያ ዋጋ ማሳያ። ይህ ለመረጃ/ግልጽነት ብቻ የቀረበ ሲሆን በተለምዶ 1 ኮይን ዋጋ 0.068 ብር አካባቢ ነው።",
+    "keywords": [
+      "ቻርት",
+      "chart",
+      "ግራፍ",
+      "ተመን",
+      "rate"
+    ],
+    "question_en": "What is the chart/graph on the 'My Wallet' page?",
+    "answer_en": "📊 This chart shows how the coin buy/sell rate has changed over time — similar to a market price display. It's shown for transparency; 1 coin is generally worth about 0.068 ETB.",
+    "keywords_en": [
+      "chart",
+      "graph",
+      "rate",
+      "coin price",
+      "wallet chart"
+    ]
+  },
+  "faq_062": {
+    "category": "wallet",
+    "question": "የኮይን ግብይት ታሪኬን (Transaction History) የት ማየት እችላለሁ?",
+    "answer": "📜 'የኔ ዋሌት' ገጽ ላይ 'Transaction History' የሚለውን ይምረጡ። እዚያ ገዢ (+)፣ ሽያጭ/ማስተላለፍ (-)፣ ሪፈራል ቦነስ፣ signup ቦነስ እና Checkout ላይ የተጠቀሙትን ኮይን ሁሉንም በዝርዝር እና 'በመጠባበቅ ላይ' ወይም 'ጸደቀ' በሚል ሁኔታ ማየት ይችላሉ።",
+    "keywords": [
+      "transaction history",
+      "ግብይት ታሪክ",
+      "ኮይን ታሪክ",
+      "history"
+    ],
+    "question_en": "Where can I see my coin transaction history?",
+    "answer_en": "📜 On the 'My Wallet' page, choose 'Transaction History'. There you'll see a detailed list of purchases (+), sales/transfers (-), referral bonus, signup bonus, and coins used at checkout — each marked as 'Pending' or 'Approved'.",
+    "keywords_en": [
+      "transaction history",
+      "coin history",
+      "wallet history"
+    ]
+  },
+  "faq_063": {
+    "category": "security",
+    "question": "'መለያዎን ያሻሽሉ' የሚል መልእክት ታየኝ — ምንድን ነው?",
+    "answer": "🔄 ይህ ማለት account ዎ ከቆየው (የድሮ) ስርአት ጋር የተያያዘ ነው፣ የደህንነት ስርአታችን ስለተሻሻለ አዲስ ኢሜል እና 4-ዲጂት ፓስዎርድ ማዘጋጀት ያስፈልግዎታል። ኢሜልዎን እና አዲስ ፓስዎርድ ካስገቡ በኋላ ወደ ኢሜልዎ የሚላከውን ኮድ በማረጋገጥ በቀላሉ ማሻሻል ይችላሉ — የቆየው መረጃዎ (ትዕዛዝ፣ ኮይን) ሙሉ በሙሉ ይቆያል፣ ምንም አይጠፋም።",
+    "keywords": [
+      "መለያዎን ያሻሽሉ",
+      "migrate",
+      "አዲስ ፓስዎርድ",
+      "የደህንነት ስርአት"
+    ],
+    "question_en": "I see a message saying 'Upgrade your account' — what does that mean?",
+    "answer_en": "🔄 This means your account is linked to our older system, and since our security system has been upgraded, you need to set up an email and a 4-digit password. Simply enter your email and a new password, then confirm the code sent to your email — your existing data (orders, coins) stays completely intact; nothing is lost.",
+    "keywords_en": [
+      "upgrade your account",
+      "migrate account",
+      "new password",
+      "security upgrade"
     ]
   }
 }

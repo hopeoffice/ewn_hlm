@@ -18,7 +18,7 @@ class LikesScreen extends StatelessWidget {
     final liked = app.products.where((p) => app.likes.contains(p.id)).toList();
 
     return Scaffold(
-      backgroundColor: AppTheme.bgMain,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         title: Text(S.t('my_likes', lang)),
         leading: IconButton(
@@ -33,7 +33,7 @@ class LikesScreen extends StatelessWidget {
                 children: [
                   const Text('🤍', style: TextStyle(fontSize: 48)),
                   const SizedBox(height: 12),
-                  Text(S.t('no_likes', lang), style: const TextStyle(color: AppTheme.textSecondary)),
+                  Text(S.t('no_likes', lang), style: TextStyle(color: AppTheme.textMuted(context))),
                 ],
               ),
             )

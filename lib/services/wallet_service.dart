@@ -10,6 +10,24 @@ class WalletService {
   static const double minBuyCoinsEtb = 1500; // minimum "Buy Coins" purchase
   static const int minRedeemCoins = 22050; // balance-value gate, not order size
 
+  // ---- Wallet screen (💱) — ported from the MIN_SELL_COINS/MIN_TRANSFER_
+  // COINS/WALLET_* constants block in main-coins.js. ----
+  static const int minSellCoins = 5000;
+  static const int minTransferCoins = 5000;
+  static const int walletHistoryLimit = 30;
+  static const int walletCandleCount = 90; // total synthetic candles generated
+  static const int walletVisibleCandles = 10; // visible at once (rest via horizontal scroll)
+  static const double walletCandleSlotPx = 32; // px width per candle slot
+  static const double walletAxisPx = 56; // fixed (non-scrolling) price-axis width
+  static const int walletCandleSpanMs = 3 * 24 * 60 * 60 * 1000; // 3 days of fake history
+
+  // ---- Edit Profile (👤) — ported from NAME_CHANGE_COOLDOWN_MS in
+  // main-coins.js (30-day name-change cooldown, enforced server-side too). ----
+  static const int nameChangeCooldownMs = 30 * 24 * 60 * 60 * 1000;
+
+  // ---- Privacy Policy — canonical hosted page (EWN_BASE_URL in index.html). ----
+  static const String privacyPolicyUrl = 'https://ewn-hlm.web.app/privacy.html';
+
   static double get minRedeemEtb =>
       double.parse((minRedeemCoins * coinValueEtb).toStringAsFixed(2));
 

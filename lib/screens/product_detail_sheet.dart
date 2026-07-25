@@ -7,15 +7,18 @@ import '../l10n/strings.dart';
 import '../widgets/auth_sheet.dart';
 import 'checkout_screen.dart';
 
-/// Ported from openProduct() / .modal-sheet in index.html + main-actions.js:
-/// image carousel, name, price + qty selector, bullet-point description,
-/// color swatches, then "Add to Cart" / "Buy Now" buttons.
+/// Ported from openProduct() / #modal-overlay in index.html + main-actions.js.
+///
+/// BUGFIX: the web app's `#modal-overlay` was originally a bottom-sheet too,
+/// but style.css has an explicit later fix making it "its own full-screen
+/// page" (height:100%, no border-radius, X pinned to the top) instead of a
+/// partial overlay. This was pushed as a full-screen route (like
+/// checkout/help-center already correctly do) instead of a
+/// DraggableScrollableSheet capped at 85% height, to match that fix and to
+/// be consistent with the rest of the app's full-screen sub-pages.
 Future<void> showProductDetail(BuildContext context, Product product) {
-  return showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _ProductDetailSheet(product: product),
+  return Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => _ProductDetailSheet(product: product)),
   );
 }
 
@@ -42,26 +45,27 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
     final images = p.images.isNotEmpty ? p.images : [''];
     final bullets = p.displayBullets(app.lang);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppTheme.bgCard,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
+    // BUGFIX: was `DraggableScrollableSheet(initialChildSize: 0.85, ...)` —
+    // an 85%-tall bottom sheet. Now a plain full-screen Scaffold body, no
+    // rounded top corners, matching the web's full-screen product page.
+    return Scaffold(
+      backgroundColor: AppTheme.card(context),
+      body: SafeArea(
+        bottom: false,
+        child: Stack(
             children: [
               ListView(
-                controller: scrollController,
                 padding: EdgeInsets.zero,
                 children: [
-                  SizedBox(
-                    height: 260,
+                  // BUGFIX: was a fixed `SizedBox(height: 260)` with
+                  // `BoxFit.cover` on every image — always cropped, even
+                  // for a single portrait photo. Web's CSS uses
+                  // `aspect-ratio: 4/3` for the carousel box, and
+                  // `object-fit: contain` (no crop) for single-image
+                  // products vs `cover` (crop-to-fill) only when there are
+                  // multiple images. Mirrored here 1:1.
+                  AspectRatio(
+                    aspectRatio: 4 / 3,
                     child: Stack(
                       children: [
                         PageView.builder(
@@ -69,7 +73,14 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                           itemCount: images.length,
                           onPageChanged: (i) => setState(() => _carouselIndex = i),
                           itemBuilder: (context, i) => images[i].isNotEmpty
-                              ? Image.network(images[i], fit: BoxFit.cover, width: double.infinity)
+                              ? Container(
+                                  color: images.length > 1 ? null : Colors.black,
+                                  child: Image.network(
+                                    images[i],
+                                    fit: images.length > 1 ? BoxFit.cover : BoxFit.contain,
+                                    width: double.infinity,
+                                  ),
+                                )
                               : Container(color: AppTheme.brand),
                         ),
                         if (images.length > 1)
@@ -102,7 +113,7 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(p.displayName(app.lang),
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
                         const SizedBox(height: 12),
 
                         // ---- Price + qty selector, side by side (Task #6) ----
@@ -118,7 +129,7 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                                   Text(S.formatPrice(p.price, app.lang),
                                       style: const TextStyle(
                                           decoration: TextDecoration.lineThrough,
-                                          color: AppTheme.textSecondary,
+                                          color: AppTheme.textMuted(context),
                                           fontSize: 13)),
                                 ],
                               ],
@@ -126,7 +137,7 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                             if (!p.outOfStock)
                               Container(
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: AppTheme.border),
+                                  border: Border.all(color: AppTheme.line(context)),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Row(
@@ -170,7 +181,7 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(line,
-                                          style: const TextStyle(fontSize: 13.5, color: AppTheme.textPrimary, height: 1.5)),
+                                          style: TextStyle(fontSize: 13.5, color: AppTheme.text(context), height: 1.5)),
                                     ),
                                   ],
                                 ),
@@ -206,12 +217,12 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                                   width: 34,
                                   height: 34,
                                   decoration: BoxDecoration(
-                                    color: color ?? AppTheme.border,
+                                    color: color ?? AppTheme.line(context),
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: active
                                           ? AppTheme.brand
-                                          : (light ? AppTheme.border : Colors.transparent),
+                                          : (light ? AppTheme.line(context) : Colors.transparent),
                                       width: active ? 3 : 1,
                                     ),
                                     boxShadow: active
@@ -238,8 +249,8 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                                     : () {
                                         context.read<AppState>().addToCart(p, color: _selectedColor, qty: _qty);
                                         Navigator.of(context).pop();
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(const SnackBar(content: Text('🛒 ወደ ጋሪ ተጨምሯል')));
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text(S.t('added_cart', app.lang))));
                                       },
                                 child: Text(S.t('add_to_cart', app.lang),
                                     style: const TextStyle(color: AppTheme.brand, fontWeight: FontWeight.bold)),
@@ -274,14 +285,13 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                 left: 12,
                 child: _RoundIconButton(
                   icon: liked ? Icons.favorite : Icons.favorite_border,
-                  iconColor: liked ? AppTheme.danger : AppTheme.textSecondary,
+                  iconColor: liked ? AppTheme.danger : AppTheme.textMuted(context),
                   onTap: () => app.toggleLike(p.id),
                 ),
               ),
             ],
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -332,7 +342,7 @@ class _RoundIconButton extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), shape: BoxShape.circle),
-        child: Icon(icon, size: 17, color: iconColor ?? AppTheme.textPrimary),
+        child: Icon(icon, size: 17, color: iconColor ?? AppTheme.text(context)),
       ),
     );
   }

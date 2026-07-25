@@ -31,6 +31,7 @@ dependencies:
 
   # --- Networking (Cloudinary upload, Cloudflare Worker calls) ---
   http: ^1.2.2
+  url_launcher: ^6.3.1   # opens privacy.html (Settings menu link + registration consent)
 
   cupertino_icons: ^1.0.8
 
@@ -41,10 +42,18 @@ dev_dependencies:
   build_runner: ^2.4.13
   flutter_lints: ^4.0.0
 
+  # ---- App icon + launch/splash screen (replaces the default Flutter
+  # logo that `flutter create` scaffolds — see codemagic.yaml, which now
+  # runs these two generators right after `flutter pub get`). ----
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
+
 flutter:
   uses-material-design: true
   assets:
     - assets/faq_data.json
+    - assets/icon/icon.png
+    - assets/illustrations/offline-illustration.png
   fonts:
     - family: NotoSansEthiopic
       fonts:
@@ -52,4 +61,31 @@ flutter:
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter-Variable.ttf
+
+# ---- flutter_launcher_icons config — replaces the default Flutter-logo
+# launcher icon with the courier illustration everywhere (all mipmap
+# densities). Run via: `dart run flutter_launcher_icons` (already wired
+# into codemagic.yaml). ----
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
+
+# ---- flutter_native_splash config — replaces the default Flutter-logo
+# native splash (shown briefly before the Flutter engine/widgets even
+# load) with the same image, on a background matching the image's own
+# solid-orange corners so it blends seamlessly on any screen size. Run
+# via: `dart run flutter_native_splash:create` (already wired into
+# codemagic.yaml). This is the NATIVE splash — separate from (and shown
+# just before) the in-Dart `SplashGate` widget in
+# lib/widgets/splash_gate.dart, which still runs afterward. ----
+flutter_native_splash:
+  color: "#FF6D00"
+  image: assets/icon/icon.png
+  android: true
+  ios: false
+  android_12:
+    image: assets/icon/icon.png
+    color: "#FF6D00"
 
