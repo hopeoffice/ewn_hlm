@@ -259,7 +259,11 @@ class AppState extends ChangeNotifier {
         // NOTE: verify this matches whatever key the transfer backend
         // actually writes into the transaction doc — trying the common
         // possibilities here since it isn't in this repo.
-        peerPhone: (tx['toPhone'] ?? tx['peerPhone'] ?? tx['counterpartyPhone'] ?? tx['fromPhone']) as String?,
+        // BUGFIX: confirmed against telegram-worker/worker.js's coinTxLog()
+        // calls in the /transferCoins handler — the actual field written
+        // is `counterparty` (not toPhone/peerPhone/etc., which were
+        // guesses before the worker source was available).
+        peerPhone: tx['counterparty'] as String?,
       ));
     }
     items.sort((a, b) => b.time.compareTo(a.time));
