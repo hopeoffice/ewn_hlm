@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
+import '../widgets/coin_icon.dart';
 
 /// Ported from #screen-orders / .order-card / .order-status in
 /// index.html + style.css.
@@ -66,13 +67,17 @@ class OrdersScreen extends StatelessWidget {
                                 Text(itemsSummary.isEmpty ? '—' : itemsSummary,
                                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.text(context))),
                                 const SizedBox(height: 4),
-                                Text(S.formatPrice((o['total'] as num?) ?? 0, lang),
+                                Text(S.formatPrice((o['subtotal'] as num?) ?? (o['total'] as num?) ?? 0, lang),
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.brand)),
                                 if (coinsUsed > 0)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 2),
-                                    child: Text('🪙 ${S.formatNumber(coinsUsed)} coin ${lang == 'am' ? 'ጥቅም ላይ ውሏል' : 'used'}',
-                                        style: const TextStyle(fontSize: 11.5, color: AppTheme.accent)),
+                                    child: Row(children: [
+                                      const CoinIcon(size: 13),
+                                      const SizedBox(width: 4),
+                                      Text('${S.formatNumber(coinsUsed)} coin ${lang == 'am' ? 'ጥቅም ላይ ውሏል' : 'used'}',
+                                          style: const TextStyle(fontSize: 11.5, color: AppTheme.accent)),
+                                    ]),
                                   ),
                                 if (o['paymentMethod'] != null)
                                   Padding(

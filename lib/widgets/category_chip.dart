@@ -25,7 +25,7 @@ class CategoryChip extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: 70),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: active ? AppTheme.accentSoft : AppTheme.card(context),
+          color: active ? AppTheme.tagBg(context) : AppTheme.card(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
           border: Border.all(color: active ? AppTheme.accent : Colors.transparent, width: 2),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 2))],
@@ -40,7 +40,7 @@ class CategoryChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: active ? AppTheme.brand : AppTheme.textMuted(context),
+                color: active ? AppTheme.tagText(context) : AppTheme.textMuted(context),
               ),
             ),
           ],

@@ -93,10 +93,10 @@ class _RootScaffoldState extends State<RootScaffold> with WidgetsBindingObserver
   final _screens = const [HomeScreen(), CartScreen(), OrdersScreen(), ProfileScreen()];
 
   static const _tabs = [
-    (emoji: '🏠', key: 'home'),
-    (emoji: '🛒', key: 'cart'),
-    (emoji: '📦', key: 'orders'),
-    (emoji: '👤', key: 'profile'),
+    (icon: 'assets/icons/nav_home.png', key: 'home'),
+    (icon: 'assets/icons/nav_cart.png', key: 'cart'),
+    (icon: 'assets/icons/nav_orders.png', key: 'orders'),
+    (icon: 'assets/icons/nav_profile.png', key: 'profile'),
   ];
 
   @override
@@ -188,7 +188,10 @@ class _RootScaffoldState extends State<RootScaffold> with WidgetsBindingObserver
                       Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          Text(tab.emoji, style: TextStyle(fontSize: active ? 24 : 22)),
+                          Opacity(
+                            opacity: active ? 1.0 : 0.55,
+                            child: Image.asset(tab.icon, width: active ? 26 : 23, height: active ? 26 : 23),
+                          ),
                           if (i == 1 && cartCount > 0)
                             Positioned(
                               top: -4,

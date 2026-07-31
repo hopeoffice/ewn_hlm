@@ -87,6 +87,23 @@ class StorageService {
     await _box.put('ewn_orders', jsonEncode(orders));
   }
 
+  // ---------------- B) Notifications cache (2-5 fix) ----------------
+  // BUGFIX: notifications used to start as an empty list and only ever get
+  // populated once the live Realtime DB stream delivered its first
+  // snapshot — a network round-trip on every cold start, which is exactly
+  // the "feels slow, reloads every time you reopen the app" complaint.
+  // Cache the last-known list so it paints instantly, same
+  // stale-while-revalidate pattern already used for orders/products.
+  static List<Map<String, dynamic>> loadNotifications() {
+    final raw = _box.get('ewn_notifications');
+    if (raw == null) return [];
+    return (jsonDecode(raw as String) as List).cast<Map<String, dynamic>>();
+  }
+
+  static Future<void> saveNotifications(List<Map<String, dynamic>> notifications) async {
+    await _box.put('ewn_notifications', jsonEncode(notifications));
+  }
+
   // ---------------- B) Products offline fallback cache ----------------
   // Deliberately has NO expiry timestamp check — mirrors PRODUCTS_CACHE_KEY
   // in main-render.js, which is only ever read when the network fetch /

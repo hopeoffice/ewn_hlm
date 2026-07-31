@@ -153,6 +153,30 @@ class FirebaseService {
     await _rtdb.ref('users/$phone/orders/$id').set(order);
   }
 
+  /// BUGFIX (2-5): there was no live listener for orders at all before —
+  /// the local `orders` list was only ever seeded once from Hive at app
+  /// start and appended to when the user placed a new order locally, so a
+  /// status change made remotely (e.g. an admin marking an order
+  /// Delivered/Rejected) never reached the app. Mirrors watchNotifications()
+  /// above: a live users/{phone}/orders listener, newest-first.
+  Stream<List<Map<String, dynamic>>> watchOrders(String phone) {
+    return _rtdb.ref('users/$phone/orders').onValue.map((event) {
+      final val = event.snapshot.value;
+      final list = <Map<String, dynamic>>[];
+      if (val is Map) {
+        val.forEach((key, v) {
+          if (v is Map) list.add(Map<String, dynamic>.from(v));
+        });
+      }
+      list.sort((a, b) {
+        final da = DateTime.tryParse(a['date']?.toString() ?? '')?.millisecondsSinceEpoch ?? 0;
+        final db = DateTime.tryParse(b['date']?.toString() ?? '')?.millisecondsSinceEpoch ?? 0;
+        return da.compareTo(db); // oldest-first, matching the existing "newest first" reversal at render time
+      });
+      return list;
+    });
+  }
+
   // ---------------- Coin balance (main-coins.js: userData.coins) ----------------
 
   /// Live coin balance — users/{phone}/coins. There is only ONE real

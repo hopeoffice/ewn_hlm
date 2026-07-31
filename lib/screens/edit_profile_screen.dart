@@ -119,12 +119,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+                decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
                 child: Text(
                   isAm
                       ? '🔒 ኢሜል እና ስልክ ቁጥር የመለያዎ ቋሚ መለያ በመሆናቸው ከዚህ ገጽ ሊቀየሩ አይችሉም።'
                       : "🔒 Your email and phone number are your account's permanent identifiers and can't be changed from this screen.",
-                  style: TextStyle(fontSize: 12, color: AppTheme.text(context)),
+                  style: TextStyle(fontSize: 12, color: AppTheme.tagText(context)),
                 ),
               ),
               const SizedBox(height: 22),

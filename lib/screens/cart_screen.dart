@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -60,7 +61,14 @@ class CartScreen extends StatelessWidget {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                               child: item.image.isNotEmpty
-                                  ? Image.network(item.image, width: 70, height: 70, fit: BoxFit.cover)
+                                  ? CachedNetworkImage(
+                                      imageUrl: item.image,
+                                      width: 70,
+                                      height: 70,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, _) => Container(width: 70, height: 70, color: AppTheme.skeleton(context)),
+                                      errorWidget: (context, _, __) => Container(width: 70, height: 70, color: AppTheme.brand),
+                                    )
                                   : Container(width: 70, height: 70, color: AppTheme.brand),
                             ),
                             const SizedBox(width: 12),

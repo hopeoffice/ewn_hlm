@@ -125,6 +125,16 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       if (faq.isEmpty) return;
       final answer = lang == 'en' ? (faq['answer_en'] ?? faq['answer']) : faq['answer'];
       setState(() {
+        // BUGFIX: previously the "5 questions" bot message (with its
+        // chips) stayed in the chat log after one was tapped, so the
+        // old chips kept accumulating on screen and could still be
+        // tapped, showing an answer in the "wrong place" relative to
+        // what the user just asked. Once a question is chosen, remove
+        // that preceding question-list message so the screen is left
+        // with only the asked question + its answer, as requested.
+        if (_messages.isNotEmpty && !_messages.last.fromUser && _messages.last.chips != null) {
+          _messages.removeLast();
+        }
         _messages.add(_ChatMsg.user(chip['label'] as String));
         _messages.add(_ChatMsg.bot(answer.toString(),
             chips: _answerChips(faq['category'] as String?, lang)));
@@ -304,16 +314,40 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         children: [
           Align(
             alignment: m.fromUser ? Alignment.centerRight : Alignment.centerLeft,
-            child: Container(
-              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: m.fromUser ? AppTheme.brand : AppTheme.card(context),
-                borderRadius: BorderRadius.circular(AppTheme.radius),
-                border: m.fromUser ? null : Border.all(color: AppTheme.line(context)),
-              ),
-              child: Text(m.text,
-                  style: TextStyle(color: m.fromUser ? Colors.white : AppTheme.text(context), fontSize: 14, height: 1.4)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // BUGFIX: the web app always shows a small bot avatar
+                // (hc-bot-icon) to the left of every bot bubble via
+                // hcAddMessage(); Flutter had no equivalent at all, so bot
+                // replies looked anonymous. TODO: swap this emoji for the
+                // icons8 "nolan/bot" asset once it's added under
+                // assets/icons/bot.png.
+                if (!m.fromUser) ...[
+                  Container(
+                    width: 26,
+                    height: 26,
+                    margin: const EdgeInsets.only(right: 6),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: AppTheme.tagBg(context), shape: BoxShape.circle),
+                    child: const Text('🤖', style: TextStyle(fontSize: 14)),
+                  ),
+                ],
+                Flexible(
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: m.fromUser ? AppTheme.brand : AppTheme.card(context),
+                      borderRadius: BorderRadius.circular(AppTheme.radius),
+                      border: m.fromUser ? null : Border.all(color: AppTheme.line(context)),
+                    ),
+                    child: Text(m.text,
+                        style: TextStyle(color: m.fromUser ? Colors.white : AppTheme.text(context), fontSize: 14, height: 1.4)),
+                  ),
+                ),
+              ],
             ),
           ),
           if (m.chips != null && m.chips!.isNotEmpty)
@@ -325,8 +359,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 children: m.chips!.map((c) {
                   final label = c['kind'] == 'category' ? '${c['emoji']} ${c['label']}' : c['label'] as String;
                   return ActionChip(
-                    label: Text(label, style: const TextStyle(fontSize: 12)),
-                    backgroundColor: AppTheme.accentSoft,
+                    label: Text(label, style: TextStyle(fontSize: 12, color: AppTheme.tagText(context))),
+                    backgroundColor: AppTheme.tagBg(context),
                     onPressed: () => _onChipTap(c, lang),
                   );
                 }).toList(),

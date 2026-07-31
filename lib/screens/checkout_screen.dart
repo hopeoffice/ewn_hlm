@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import '../services/wallet_service.dart';
 import '../widgets/offline_overlay.dart';
+import '../widgets/coin_icon.dart';
 
 /// Ported from PAYMENT_METHODS in main-actions.js. NOTE: these are the
 /// same fallback numbers the web app itself hardcodes at load time —
@@ -121,39 +122,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppTheme.accentSoft,
+              color: AppTheme.tagBg(context),
               borderRadius: BorderRadius.circular(AppTheme.radiusSm),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(S.t('co_summary', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 8),
-                ...items.map((i) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Flexible(child: Text('${i.name} × ${i.qty}', overflow: TextOverflow.ellipsis)),
-                                if (i.color != null) ...[
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(color: _parseHexColor(i.color!), shape: BoxShape.circle),
-                                  ),
+            child: DefaultTextStyle.merge(
+              style: TextStyle(color: AppTheme.tagText(context)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(S.t('co_summary', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  ...items.map((i) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Flexible(child: Text('${i.name} × ${i.qty}', overflow: TextOverflow.ellipsis)),
+                                  if (i.color != null) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(color: _parseHexColor(i.color!), shape: BoxShape.circle),
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
-                          ),
-                          Text(S.formatPrice(i.lineTotal, lang)),
-                        ],
-                      ),
-                    )),
-              ],
+                            Text(S.formatPrice(i.lineTotal, lang)),
+                          ],
+                        ),
+                      )),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -225,17 +229,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+                  decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(method.accountLabel(lang), style: TextStyle(fontSize: 10.5, color: AppTheme.textMuted(context))),
+                      Text(method.accountLabel(lang), style: TextStyle(fontSize: 10.5, color: AppTheme.tagText(context).withOpacity(0.75))),
                       const SizedBox(height: 4),
                       Row(
                         children: [
                           Expanded(
                             child: Text(method.account,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.tagText(context)), overflow: TextOverflow.ellipsis),
                           ),
                           GestureDetector(
                             onTap: () {
@@ -244,7 +248,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   .showSnackBar(SnackBar(content: Text(S.t('co_copy', lang)), duration: const Duration(seconds: 1)));
                             },
                             child: Text(S.t('co_copy', lang),
-                                style: const TextStyle(color: AppTheme.brand, fontWeight: FontWeight.bold, fontSize: 12)),
+                                style: TextStyle(color: AppTheme.tagText(context), fontWeight: FontWeight.bold, fontSize: 12)),
                           ),
                         ],
                       ),
@@ -306,16 +310,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   height: 110,
                   padding: const EdgeInsets.all(10),
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(color: const Color(0xFFFFF3CD), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+                  decoration: BoxDecoration(color: AppTheme.goldSoftBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (_useCoins)
                         Text(S.formatPrice(rawTotal, lang),
-                            style: TextStyle(decoration: TextDecoration.lineThrough, fontSize: 12, color: AppTheme.textMuted(context))),
-                      Text(S.t('co_total', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                            style: TextStyle(decoration: TextDecoration.lineThrough, fontSize: 12, color: AppTheme.goldSoftText(context).withOpacity(0.7))),
+                      Text(S.t('co_total', lang), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.goldSoftText(context))),
                       Text(S.formatPrice(total, lang),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), textAlign: TextAlign.center),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.goldSoftText(context)), textAlign: TextAlign.center),
                     ],
                   ),
                 ),
@@ -323,14 +327,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ],
           ),
 
-          // ---- 🪙 Coin redemption box (renderCoinRedemptionBox) ----
+          // ---- Coin redemption box (renderCoinRedemptionBox) ----
           const SizedBox(height: 14),
           if (app.isAuthenticated && !eligibility.eligible && eligibility.reason == 'balance_too_low')
-            _coinNote(lang == 'am'
-                ? '🪙 coin መጠቀም የሚቻለው የ coin ቀሪ ሂሳብዎ ከ${S.formatPrice(WalletService.minRedeemEtb, lang)} በላይ ዋጋ ሲኖረው ብቻ ነው። (የእርስዎ ቀሪ፦ ${S.formatNumber(app.coins)} coin ≈ ${S.formatPrice(WalletService.coinsToEtb(app.coins), lang)})'
-                : "🪙 Coins can only be used once your coin balance is worth more than ${S.formatPrice(WalletService.minRedeemEtb, lang)}. (Your balance: ${S.formatNumber(app.coins)} coins ≈ ${S.formatPrice(WalletService.coinsToEtb(app.coins), lang)})")
+            _coinNote(context, lang == 'am'
+                ? 'coin መጠቀም የሚቻለው የ coin ቀሪ ሂሳብዎ ከ${S.formatPrice(WalletService.minRedeemEtb, lang)} በላይ ዋጋ ሲኖረው ብቻ ነው። (የእርስዎ ቀሪ፦ ${S.formatNumber(app.coins)} coin ≈ ${S.formatPrice(WalletService.coinsToEtb(app.coins), lang)})'
+                : "Coins can only be used once your coin balance is worth more than ${S.formatPrice(WalletService.minRedeemEtb, lang)}. (Your balance: ${S.formatNumber(app.coins)} coins ≈ ${S.formatPrice(WalletService.coinsToEtb(app.coins), lang)})")
           else if (app.isAuthenticated && !eligibility.eligible && eligibility.reason == 'no_coins')
-            _coinNote(lang == 'am' ? '🪙 በቂ coin የለዎትም።' : "🪙 You don't have enough coins.")
+            _coinNote(context, lang == 'am' ? 'በቂ coin የለዎትም።' : "You don't have enough coins.")
           else if (app.isAuthenticated && eligibility.eligible)
             _CoinToggle(
               lang: lang,
@@ -373,10 +377,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _coinNote(String msg) => Container(
+  Widget _coinNote(BuildContext context, String msg) => Container(
         padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
-        child: Text(msg, style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
+        decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const CoinIcon(size: 14),
+            const SizedBox(width: 6),
+            Expanded(child: Text(msg, style: TextStyle(fontSize: 12, color: AppTheme.tagText(context)))),
+          ],
+        ),
       );
 
   Widget _labeled(String label, Widget child) => Column(
@@ -623,16 +634,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(S.t('co_help_support_title', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      Text(S.t('co_help_support_hc', lang), style: const TextStyle(fontSize: 12.5)),
-                      Text(S.t('co_help_support_email', lang), style: const TextStyle(fontSize: 12.5)),
-                      Text(S.t('co_help_support_phone', lang), style: const TextStyle(fontSize: 12.5)),
-                    ],
+                  decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+                  child: DefaultTextStyle.merge(
+                    style: TextStyle(color: AppTheme.tagText(context)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(S.t('co_help_support_title', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 6),
+                        Text(S.t('co_help_support_hc', lang), style: const TextStyle(fontSize: 12.5)),
+                        Text(S.t('co_help_support_email', lang), style: const TextStyle(fontSize: 12.5)),
+                        Text(S.t('co_help_support_phone', lang), style: const TextStyle(fontSize: 12.5)),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -666,19 +680,21 @@ class _CoinToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+      decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Checkbox(value: checked, activeColor: AppTheme.brand, onChanged: (v) => onChanged(v ?? false)),
+              const CoinIcon(size: 16),
+              const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   lang == 'am'
-                      ? '🪙 coin ተጠቀም (የእርስዎ ቀሪ፦ ${S.formatNumber(coins)} coin)'
-                      : '🪙 Use Coins (Balance: ${S.formatNumber(coins)} coins)',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ? 'coin ተጠቀም (የእርስዎ ቀሪ፦ ${S.formatNumber(coins)} coin)'
+                      : 'Use Coins (Balance: ${S.formatNumber(coins)} coins)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.tagText(context)),
                 ),
               ),
             ],
@@ -689,7 +705,7 @@ class _CoinToggle extends StatelessWidget {
               lang == 'am'
                   ? 'እስከ ${S.formatNumber(maxUsableCoins)} coin (${S.formatPrice(maxDiscount, lang)}) መጠቀም ይችላሉ — ለማረጋገጫ ፓስዎርድ ይጠየቃሉ'
                   : 'You can use up to ${S.formatNumber(maxUsableCoins)} coins (${S.formatPrice(maxDiscount, lang)}) — Password confirmation required',
-              style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted(context)),
+              style: TextStyle(fontSize: 11.5, color: AppTheme.tagText(context).withOpacity(0.8)),
             ),
           ),
         ],

@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import '../widgets/offline_overlay.dart';
 import '../widgets/coin_candlestick_chart.dart';
+import '../widgets/coin_icon.dart';
 
 /// Ported from renderMyAccount() (balance) + openBuyCoinsModal()/
 /// submitBuyCoins() (buy form) + renderTransactionHistoryScreen()
@@ -49,8 +50,15 @@ class WalletScreen extends StatelessWidget {
                 Text(lang == 'am' ? 'ጠቅላላ ቀሪ ሂሳብ' : 'Total Coin Balance',
                     style: const TextStyle(color: Colors.white70, fontSize: 13)),
                 const SizedBox(height: 6),
-                Text('🪙 ${S.formatNumber(app.coins)}',
-                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CoinIcon(size: 26),
+                    const SizedBox(width: 8),
+                    Text(S.formatNumber(app.coins),
+                        style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                  ],
+                ),
                 Text('≈ ${S.formatPrice(WalletService.coinsToEtb(app.coins), lang)}',
                     style: const TextStyle(color: Colors.white70, fontSize: 13)),
                 const SizedBox(height: 14),
@@ -96,13 +104,87 @@ class WalletScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.gold, padding: const EdgeInsets.symmetric(vertical: 14)),
-              onPressed: () => showBuyCoinsSheet(context),
-              icon: const Text('🪙'),
-              label: Text(lang == 'am' ? 'coin ግዛ' : 'Buy Coins', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          // ---- BUGFIX (#6): web's renderMyAccount() shows two more
+          // sections below the quick-actions row — a "🏦 Savings Balance"
+          // card (with its own inline Buy button) and a "🎁 Bonus" card
+          // breaking down signup bonus vs referral coins. Flutter only had
+          // the two small chips inside the green balance card; these were
+          // missing entirely.
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.card(context),
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+              border: Border.all(color: AppTheme.line(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(lang == 'am' ? '🏦 የቁጠባ ቀሪ ሂሳብ' : '🏦 Savings Balance',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
+                    TextButton(
+                      style: TextButton.styleFrom(backgroundColor: AppTheme.brand, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+                      onPressed: () => showBuyCoinsSheet(context),
+                      child: Text(lang == 'am' ? 'ግዛ' : 'Buy', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(lang == 'am' ? 'በብር የገዙት coin' : 'Coins purchased with money',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
+                const SizedBox(height: 8),
+                Row(children: [
+                  const CoinIcon(size: 20),
+                  const SizedBox(width: 6),
+                  Text(S.formatNumber(savingsCoins),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.accent)),
+                ]),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.card(context),
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+              border: Border.all(color: AppTheme.line(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(lang == 'am' ? '🎁 ቦነስ' : '🎁 Bonus',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(lang == 'am' ? 'የምዝገባ ማበረታቻ' : 'Signup bonus', style: TextStyle(fontSize: 13, color: AppTheme.text(context))),
+                    Row(children: [
+                      const CoinIcon(size: 14),
+                      const SizedBox(width: 4),
+                      Text(S.formatNumber(WalletService.signupBonusCoins), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.text(context))),
+                    ]),
+                  ],
+                ),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(lang == 'am' ? 'ሪፈር (${app.referralCount} ሰው)' : 'Referrals (${app.referralCount} people)',
+                        style: TextStyle(fontSize: 13, color: AppTheme.text(context))),
+                    Row(children: [
+                      const CoinIcon(size: 14),
+                      const SizedBox(width: 4),
+                      Text(S.formatNumber(app.referralCount * WalletService.referralCoins), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.text(context))),
+                    ]),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -216,29 +298,34 @@ class _FeedRow extends StatelessWidget {
     String? orderBit;
     String? reasonBit;
     double etbValue;
+    Widget leadingIcon;
 
     switch (item.kind) {
       case CoinFeedKind.pendingBuy:
-        title = isAm ? '🪙 Coin ግዢ ጥያቄ' : '🪙 Coin purchase request';
+        leadingIcon = const CoinIcon(size: 16);
+        title = isAm ? 'Coin ግዢ ጥያቄ' : 'Coin purchase request';
         amountLabel = '+${S.formatNumber(item.coins)} 🕓 ${isAm ? 'በመጠባበቅ ላይ' : 'Pending'}';
         amountColor = AppTheme.gold;
         etbValue = WalletService.coinsToEtb(item.coins).toDouble();
         break;
       case CoinFeedKind.pendingSell:
-        title = isAm ? '🪙 Coin ሽያጭ ጥያቄ' : '🪙 Coin sell request';
+        leadingIcon = const CoinIcon(size: 16);
+        title = isAm ? 'Coin ሽያጭ ጥያቄ' : 'Coin sell request';
         amountLabel = '-${S.formatNumber(item.coins)} 🕓 ${isAm ? 'በመጠባበቅ ላይ' : 'Pending'}';
         amountColor = AppTheme.gold;
         etbValue = item.etbAmount;
         break;
       case CoinFeedKind.rejectedBuy:
-        title = isAm ? '🪙 Coin ግዢ ጥያቄ' : '🪙 Coin purchase request';
+        leadingIcon = const CoinIcon(size: 16);
+        title = isAm ? 'Coin ግዢ ጥያቄ' : 'Coin purchase request';
         amountLabel = '+${S.formatNumber(item.coins)} ❌ ${isAm ? 'ውድቅ ተደርጓል' : 'Rejected'}';
         amountColor = AppTheme.danger;
         reasonBit = item.rejectReason;
         etbValue = WalletService.coinsToEtb(item.coins).toDouble();
         break;
       case CoinFeedKind.rejectedSell:
-        title = isAm ? '🪙 Coin ሽያጭ ጥያቄ' : '🪙 Coin sell request';
+        leadingIcon = const CoinIcon(size: 16);
+        title = isAm ? 'Coin ሽያጭ ጥያቄ' : 'Coin sell request';
         amountLabel = '-${S.formatNumber(item.coins)} ❌ ${isAm ? 'ውድቅ ተደርጓል' : 'Rejected'}';
         amountColor = AppTheme.danger;
         reasonBit = item.rejectReason;
@@ -246,7 +333,20 @@ class _FeedRow extends StatelessWidget {
         break;
       case CoinFeedKind.tx:
         final info = _kTxTypeInfo[item.type] ?? ('🪙', item.type, item.type);
-        title = '${info.$1} ${isAm ? info.$2 : info.$3}';
+        // BUGFIX: the leading symbol (info.$1) used to be baked directly
+        // into the title string. When it was 🪙 specifically ("purchase
+        // approved"), that's the same tofu-box-on-some-phones emoji as
+        // everywhere else — now rendered as a real icon widget instead.
+        // The other type icons (🎁🔗🛒➕➖💸↗️↙️) are older, universally
+        // supported emoji, so they're left as plain text.
+        leadingIcon = info.$1 == '🪙' ? const CoinIcon(size: 16) : Text(info.$1, style: const TextStyle(fontSize: 16));
+        if (item.type == 'transfer_out' && item.peerPhone != null && item.peerPhone!.isNotEmpty) {
+          title = isAm ? 'ወደ ${item.peerPhone} ልከዋል' : 'Sent to ${item.peerPhone}';
+        } else if (item.type == 'transfer_in' && item.peerPhone != null && item.peerPhone!.isNotEmpty) {
+          title = isAm ? 'ከ ${item.peerPhone} ደርሷል' : 'Received from ${item.peerPhone}';
+        } else {
+          title = isAm ? info.$2 : info.$3;
+        }
         final positive = item.amount > 0;
         final absAmount = item.amount.abs();
         amountLabel = positive
@@ -275,8 +375,14 @@ class _FeedRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                if (orderBit != null) Text(orderBit, style: TextStyle(fontSize: 11, color: AppTheme.textMuted(context))),
+                Row(
+                  children: [
+                    leadingIcon,
+                    const SizedBox(width: 6),
+                    Flexible(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+                  ],
+                ),
+                if (orderBit != null) Text(orderBit, style: const TextStyle(fontSize: 11, color: AppTheme.accent, fontWeight: FontWeight.w600)),
                 if (reasonBit != null && reasonBit.isNotEmpty)
                   Text('💬 $reasonBit', style: TextStyle(fontSize: 11, color: AppTheme.textMuted(context))),
                 Text(timeStr, style: TextStyle(fontSize: 11, color: AppTheme.textMuted(context))),
@@ -398,7 +504,11 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
           controller: scrollController,
           padding: const EdgeInsets.all(18),
           children: [
-            Text(isAm ? '🪙 coin ግዛ' : '🪙 Buy Coins', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Row(children: [
+              const CoinIcon(size: 20),
+              const SizedBox(width: 8),
+              Text(isAm ? 'coin ግዛ' : 'Buy Coins', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ]),
             const SizedBox(height: 4),
             Text(isAm ? '1 coin = 0.068 ${S.t('etb', lang)}' : '1 Coin = 0.068 ${S.t('etb', lang)}',
                 style: TextStyle(color: AppTheme.textMuted(context), fontSize: 12)),
@@ -465,18 +575,18 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
 
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+              decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(method.$5, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    child: Text(method.$5, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.tagText(context))),
                   ),
                   GestureDetector(
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: method.$5));
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('co_copy', lang)), duration: const Duration(seconds: 1)));
                     },
-                    child: Text(S.t('co_copy', lang), style: const TextStyle(color: AppTheme.brand, fontWeight: FontWeight.bold, fontSize: 12)),
+                    child: Text(S.t('co_copy', lang), style: TextStyle(color: AppTheme.tagText(context), fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                 ],
               ),
@@ -518,20 +628,25 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
                 child: Container(
                   height: 100,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(color: const Color(0xFFFFF3CD), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
-                  child: Text('🪙 ${S.formatNumber(_previewCoins)}\n${isAm ? 'coin ያገኛሉ' : 'coins'}',
-                      textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  decoration: BoxDecoration(color: AppTheme.goldSoftBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const CoinIcon(size: 16),
+                        const SizedBox(width: 4),
+                        Text(S.formatNumber(_previewCoins),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.goldSoftText(context))),
+                      ]),
+                      Text(isAm ? 'coin ያገኛሉ' : 'coins',
+                          textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.goldSoftText(context))),
+                    ],
+                  ),
                 ),
               ),
             ]),
             const SizedBox(height: 20),
 
-            _dangerNote(
-              context,
-              isAm
-                  ? '⚠️ ለአካውንትዎ ደህንነት ፓስዎርድ በፍጹም ለማንም አያጋሩ። የተሳሳተ ወይም የውሸት ደረሰኝ መላክ ትዕዛዙ ውድቅ እንዲሆን እና አካውንትዎ እንዲታገድ ያደርጋል። ማረጋገጫ 1–5 ሰዓት ሊፈጅ ይችላል።'
-                  : "⚠️ For your account's security, never share your password with anyone. Submitting an incorrect or fake receipt will get the request rejected and may get your account suspended. Confirmation may take 1–5 hours.",
-            ),
             _confirmCheckbox(
               context,
               value: _confirmed,
@@ -639,8 +754,8 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
       setState(() => _amountInvalid = true);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(isAm
-              ? '🪙 coin ለመግዛት ዝቅተኛ መጠን ${WalletService.minBuyCoinsEtb.toInt()} ብር ነው'
-              : '🪙 Minimum amount to buy coins is ${WalletService.minBuyCoinsEtb.toInt()} ETB')));
+              ? 'coin ለመግዛት ዝቅተኛ መጠን ${WalletService.minBuyCoinsEtb.toInt()} ብር ነው'
+              : 'Minimum amount to buy coins is ${WalletService.minBuyCoinsEtb.toInt()} ETB')));
       return;
     }
     if (_receipt == null) {
@@ -724,7 +839,9 @@ class _CoinWalletScreenState extends State<CoinWalletScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('🪙 ${S.formatNumber(app.coins)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    const CoinIcon(size: 22),
+                    const SizedBox(width: 6),
+                    Text(S.formatNumber(app.coins), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 8),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 3),
@@ -750,7 +867,7 @@ class _CoinWalletScreenState extends State<CoinWalletScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(children: [
-                            const Text('🪙', style: TextStyle(fontSize: 18)),
+                            const CoinIcon(size: 18),
                             const SizedBox(width: 6),
                             const Text('Ewn Coin', style: TextStyle(fontWeight: FontWeight.w600)),
                           ]),
@@ -803,12 +920,12 @@ class _CoinWalletScreenState extends State<CoinWalletScreen> {
 
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+                  decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
                   child: Text(
                     isAm
                         ? 'coin ግዢ እና ሽያጭ ላይ ሂሳብዎን ወደ ዋሌትዎ ወይም ወደ ባንክ ቁጥርዎ ለማስተላለፍ ከ1 - 5 ሰአት ሊወስድ ይችላል።'
                         : 'Transferring your balance to your wallet or bank account after a coin buy/sell may take 1–5 hours.',
-                    style: TextStyle(fontSize: 12, color: AppTheme.text(context)),
+                    style: TextStyle(fontSize: 12, color: AppTheme.tagText(context)),
                   ),
                 ),
               ],
@@ -990,16 +1107,20 @@ class _SellCoinsSheetState extends State<_SellCoinsSheet> {
           controller: scrollController,
           padding: const EdgeInsets.all(18),
           children: [
-            Text(isAm ? '🪙 coin ሽጥ' : '🪙 Sell Coins', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Row(children: [
+              const CoinIcon(size: 20),
+              const SizedBox(width: 8),
+              Text(isAm ? 'coin ሽጥ' : 'Sell Coins', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ]),
             const SizedBox(height: 10),
 
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+              decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
               child: Column(children: [
-                _summaryRow(isAm ? '1 coin' : '1 Coin', '${widget.sellRate} ${S.t('etb', lang)}'),
+                _summaryRow(isAm ? '1 coin' : '1 Coin', '${widget.sellRate} ${S.t('etb', lang)}', color: AppTheme.tagText(context)),
                 const SizedBox(height: 4),
-                _summaryRow(isAm ? 'ያለዎት ቀሪ ሂሳብ' : 'Your Balance', '🪙 ${S.formatNumber(app.coins)}'),
+                _summaryRow(isAm ? 'ያለዎት ቀሪ ሂሳብ' : 'Your Balance', S.formatNumber(app.coins), color: AppTheme.tagText(context), coinValue: true),
               ]),
             ),
             const SizedBox(height: 14),
@@ -1050,18 +1171,12 @@ class _SellCoinsSheetState extends State<_SellCoinsSheet> {
             Container(
               padding: const EdgeInsets.all(12),
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: const Color(0xFFFFF3CD), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+              decoration: BoxDecoration(color: AppTheme.goldSoftBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
               child: Text('${S.formatPrice(_previewEtb, lang)}\n${isAm ? 'ያገኛሉ' : 'you get'}',
-                  textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.goldSoftText(context))),
             ),
             const SizedBox(height: 18),
 
-            _dangerNote(
-              context,
-              isAm
-                  ? '⚠️ የገባ ሂሳብ ቁጥር ትክክል መሆኑን ያረጋግጡ። ማረጋገጫ 1–5 ሰዓት ሊፈጅ ይችላል። ከጸደቀ በኋላ ትዕዛዙ ሊቀለበስ አይችልም፣ የተሳሳተ ሂሳብ ቁጥር በሰጡ ጊዜ ገንዘቡ ላይመለስ ይችላል።'
-                  : "⚠️ Double-check the account number you entered. Confirmation may take 1–5 hours. Once approved, this can't be reversed — an incorrect account number may mean the money can't be recovered.",
-            ),
             _confirmCheckbox(
               context,
               value: _confirmed,
@@ -1086,9 +1201,15 @@ class _SellCoinsSheetState extends State<_SellCoinsSheet> {
     );
   }
 
-  Widget _summaryRow(String label, String value) => Row(
+  Widget _summaryRow(String label, String value, {Color? color, bool coinValue = false}) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(label, style: const TextStyle(fontSize: 12)), Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))],
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, color: color)),
+          Row(children: [
+            if (coinValue) ...[const CoinIcon(size: 13), const SizedBox(width: 4)],
+            Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+          ]),
+        ],
       );
 
   Widget _labeled(String label, Widget child) => Column(
@@ -1210,12 +1331,16 @@ class _TransferCoinsSheetState extends State<_TransferCoinsSheet> {
 
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppTheme.accentSoft, borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+              decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(isAm ? 'ያለዎት ቀሪ ሂሳብ' : 'Your Balance', style: const TextStyle(fontSize: 12)),
-                  Text('🪙 ${S.formatNumber(app.coins)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(isAm ? 'ያለዎት ቀሪ ሂሳብ' : 'Your Balance', style: TextStyle(fontSize: 12, color: AppTheme.tagText(context))),
+                  Row(children: [
+                    const CoinIcon(size: 13),
+                    const SizedBox(width: 4),
+                    Text(S.formatNumber(app.coins), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.tagText(context))),
+                  ]),
                 ],
               ),
             ),

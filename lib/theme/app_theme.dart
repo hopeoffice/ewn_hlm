@@ -88,6 +88,15 @@ class AppTheme {
   static Color tagBg(BuildContext context) => isDark(context) ? tagBgDark : tagBgLight;
   static Color tagText(BuildContext context) => isDark(context) ? tagTextDark : tagTextLight;
   static Color header(BuildContext context) => isDark(context) ? bgHeaderDark : bgHeaderLight;
+  static Color skeleton(BuildContext context) => isDark(context) ? skeletonDark : skeletonLight;
+
+  // ---- BUGFIX (dark mode contrast): a "soft cream/gold" box (e.g. the
+  // checkout Total Cost card) used to be a hardcoded light-only
+  // Color(0xFFFFF3CD) with default/near-white text on top — unreadable
+  // in dark mode. Reuses the existing pending-status color pair so it
+  // gets a proper dark amber background + bright gold text at night.
+  static Color goldSoftBg(BuildContext context) => isDark(context) ? statusPendingBgDark : statusPendingBgLight;
+  static Color goldSoftText(BuildContext context) => isDark(context) ? gold : statusPendingTextLight;
 
   // ---- Radii (--radius / --radius-sm / --radius-lg) ----
   static const double radius = 14;

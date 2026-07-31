@@ -545,13 +545,19 @@ class _AuthSheetState extends State<_AuthSheet> {
         const SizedBox(height: 16),
         TextField(
           controller: _nameCtrl,
-          decoration: InputDecoration(labelText: S.t('full_name', lang), border: const OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: S.t('full_name', lang),
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              border: const OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _regEmailCtrl,
           keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(labelText: S.t('email_address', lang), border: const OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: S.t('email_address', lang),
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              border: const OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -559,7 +565,10 @@ class _AuthSheetState extends State<_AuthSheet> {
           keyboardType: TextInputType.number,
           maxLength: 4,
           obscureText: true,
-          decoration: InputDecoration(labelText: S.t('pin_code', lang), border: const OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: S.t('pin_code', lang),
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              border: const OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -567,13 +576,19 @@ class _AuthSheetState extends State<_AuthSheet> {
           keyboardType: TextInputType.number,
           maxLength: 4,
           obscureText: true,
-          decoration: InputDecoration(labelText: S.t('pin_confirm', lang), border: const OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: S.t('pin_confirm', lang),
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              border: const OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _refCtrl,
           textCapitalization: TextCapitalization.characters,
-          decoration: InputDecoration(labelText: S.t('promo_code_label', lang), border: const OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: S.t('promo_code_label', lang),
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              border: const OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
         InkWell(

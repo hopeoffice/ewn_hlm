@@ -33,6 +33,11 @@ class ProfileScreen extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           // ---- .profile-header (gradient) ----
+          // BUGFIX: this used to be a centered Column (avatar on top, name
+          // + phone below, everything center-aligned, 80px avatar). Web's
+          // .profile-header is actually a left-aligned Row: a 56px avatar
+          // on the left, with the name/phone stacked in a column to its
+          // right — matched exactly below.
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
@@ -44,40 +49,57 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    if (!app.isAuthenticated) showAuthSheet(context);
-                  },
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 3),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (!app.isAuthenticated) showAuthSheet(context);
+                      },
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withOpacity(0.5), width: 3),
+                        ),
+                        child: const Icon(Icons.person, color: Colors.white, size: 26),
+                      ),
                     ),
-                    child: const Icon(Icons.person, color: Colors.white, size: 36),
-                  ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(app.user?.name ?? S.t('guest', lang),
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text(app.user?.phone ?? '',
+                            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                Text(app.user?.name ?? S.t('guest', lang),
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                Text(app.user?.phone ?? '',
-                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
                 if (!app.isAuthenticated)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        side: BorderSide(color: Colors.white.withOpacity(0.5), width: 2),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          side: BorderSide(color: Colors.white.withOpacity(0.5), width: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        onPressed: () => showAuthSheet(context),
+                        child: Text(S.t('login_btn', lang),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
-                      onPressed: () => showAuthSheet(context),
-                      child: Text(S.t('login_btn', lang),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ),
               ],

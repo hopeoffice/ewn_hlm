@@ -49,6 +49,7 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> notifications = [];
   int unreadNotifCount = 0;
   StreamSubscription<List<Map<String, dynamic>>>? _notifSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _ordersSub;
 
   // ---- Theme (menu-item "ቀለም ገጽታ" toggle in profile) ----
   ThemeMode themeMode = ThemeMode.light;
@@ -86,9 +87,11 @@ class AppState extends ChangeNotifier {
     user = await StorageService.restoreSession();
     if (user != null) {
       _watchCoins(user!.phone);
+      _watchOrders(user!.phone);
       PushService.registerForUser(user!.phone);
       _loadReferralInfo(user!.phone);
     }
+    notifications = StorageService.loadNotifications();
     _watchNotifications();
     unawaited(loadCategories());
 
@@ -171,6 +174,7 @@ class AppState extends ChangeNotifier {
     }
 
     _watchCoins(phone);
+    _watchOrders(phone);
     PushService.registerForUser(phone); // Step 3 — fire-and-forget
     _loadReferralInfo(phone);
     _watchNotifications();
@@ -250,6 +254,12 @@ class AppState extends ChangeNotifier {
         amount: (tx['amount'] as num?)?.toInt() ?? 0,
         orderId: tx['orderId'] as String?,
         orderPercent: (tx['orderPercent'] as num?)?.toInt(),
+        // BUGFIX: transfer_out/transfer_in rows used to always show the
+        // generic "Sent to another user" label with no indication of who.
+        // NOTE: verify this matches whatever key the transfer backend
+        // actually writes into the transaction doc — trying the common
+        // possibilities here since it isn't in this repo.
+        peerPhone: (tx['toPhone'] ?? tx['peerPhone'] ?? tx['counterpartyPhone'] ?? tx['fromPhone']) as String?,
       ));
     }
     items.sort((a, b) => b.time.compareTo(a.time));
@@ -561,6 +571,7 @@ class AppState extends ChangeNotifier {
     _locationSaved = false;
     _locationBannerDismissed = false;
     _coinSub?.cancel();
+    _ordersSub?.cancel();
     _referralSub?.cancel();
     _coinPurchasesSub?.cancel();
     _coinSellRequestsSub?.cancel();
@@ -581,6 +592,7 @@ class AppState extends ChangeNotifier {
     _notifSub?.cancel();
     _notifSub = _fb.watchNotifications(phone: user?.phone).listen((list) {
       notifications = list;
+      unawaited(StorageService.saveNotifications(list)); // 2-5: keep the local cache fresh
       final lastSeen = int.tryParse(StorageService.getString('ewn_notif_last_seen') ?? '0') ?? 0;
       unreadNotifCount = notifications.where((n) {
         final ts = (n['timestamp'] as num?)?.toInt() ??
@@ -588,6 +600,25 @@ class AppState extends ChangeNotifier {
             0;
         return ts > lastSeen;
       }).length;
+      notifyListeners();
+    });
+  }
+
+  // ---------------- Orders (2-5 fix — live sync was missing entirely) ----------------
+
+  /// Before this, `orders` was only ever seeded once from the local Hive
+  /// cache plus whatever the client itself just wrote locally — a status
+  /// change made remotely (e.g. an admin marking an order
+  /// Delivered/Rejected) never reached the app. This keeps `orders` live,
+  /// same stale-while-revalidate shape as products/notifications: the
+  /// screen already paints instantly from `StorageService.loadOrders()`
+  /// at bootstrap, and this listener refreshes it (and the cache) the
+  /// moment new data arrives.
+  void _watchOrders(String phone) {
+    _ordersSub?.cancel();
+    _ordersSub = _fb.watchOrders(phone).listen((list) {
+      orders = list;
+      unawaited(StorageService.saveOrders(list));
       notifyListeners();
     });
   }
@@ -728,9 +759,9 @@ class AppState extends ChangeNotifier {
 
     String methodLabel = paymentMethodLabel ?? paymentMethod;
     if (coinPercent >= 100) {
-      methodLabel = lang == 'am' ? '🪙 100% Coins ተከፍሏል' : '🪙 100% Paid with Coins';
+      methodLabel = lang == 'am' ? '100% Coins ተከፍሏል' : '100% Paid with Coins';
     } else if (coinPercent > 0) {
-      methodLabel = '🪙 $coinPercent% Coins + $methodLabel';
+      methodLabel = '$coinPercent% Coins + $methodLabel';
     }
 
     final order = {
@@ -928,6 +959,7 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _coinSub?.cancel();
+    _ordersSub?.cancel();
     _referralSub?.cancel();
     _notifSub?.cancel();
     _coinPurchasesSub?.cancel();
@@ -953,6 +985,7 @@ class CoinFeedItem {
   final int amount; // tx only — signed (+credit / -debit)
   final String? orderId; // tx only, redeem rows
   final int? orderPercent; // tx only, redeem rows
+  final String? peerPhone; // tx only, transfer_in/transfer_out rows — the other party's phone number
 
   bool get isPending => kind == CoinFeedKind.pendingBuy || kind == CoinFeedKind.pendingSell;
   bool get isRejected => kind == CoinFeedKind.rejectedBuy || kind == CoinFeedKind.rejectedSell;
@@ -964,7 +997,8 @@ class CoinFeedItem {
         type = '',
         amount = 0,
         orderId = null,
-        orderPercent = null;
+        orderPercent = null,
+        peerPhone = null;
 
   CoinFeedItem.pendingSell({required this.time, required this.coins, required this.etbAmount})
       : kind = CoinFeedKind.pendingSell,
@@ -972,7 +1006,8 @@ class CoinFeedItem {
         type = '',
         amount = 0,
         orderId = null,
-        orderPercent = null;
+        orderPercent = null,
+        peerPhone = null;
 
   CoinFeedItem.rejectedBuy({required this.time, required this.coins, this.rejectReason})
       : kind = CoinFeedKind.rejectedBuy,
@@ -980,16 +1015,18 @@ class CoinFeedItem {
         type = '',
         amount = 0,
         orderId = null,
-        orderPercent = null;
+        orderPercent = null,
+        peerPhone = null;
 
   CoinFeedItem.rejectedSell({required this.time, required this.coins, required this.etbAmount, this.rejectReason})
       : kind = CoinFeedKind.rejectedSell,
         type = '',
         amount = 0,
         orderId = null,
-        orderPercent = null;
+        orderPercent = null,
+        peerPhone = null;
 
-  CoinFeedItem.tx({required this.time, required this.type, required this.amount, this.orderId, this.orderPercent})
+  CoinFeedItem.tx({required this.time, required this.type, required this.amount, this.orderId, this.orderPercent, this.peerPhone})
       : kind = CoinFeedKind.tx,
         coins = 0,
         etbAmount = 0,

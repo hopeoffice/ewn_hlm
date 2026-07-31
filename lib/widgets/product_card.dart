@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../state/app_state.dart';
@@ -45,10 +46,11 @@ class ProductCard extends StatelessWidget {
                         style: TextStyle(color: Colors.white, fontSize: 12), textAlign: TextAlign.center),
                   ),
                   if (product.thumbnail.isNotEmpty)
-                    Image.network(
-                      product.thumbnail,
+                    CachedNetworkImage(
+                      imageUrl: product.thumbnail,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      fadeInDuration: const Duration(milliseconds: 150),
+                      errorWidget: (_, __, ___) => const SizedBox.shrink(),
                     ),
                   // .stock-badge.sale — top-left, only when discounted
                   if (hasDiscount)

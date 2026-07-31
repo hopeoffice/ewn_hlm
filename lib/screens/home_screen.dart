@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -41,7 +42,16 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverToBoxAdapter(
             child: Container(
               color: AppTheme.brand,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              // BUGFIX: the header background must still bleed edge-to-edge
+              // behind the status bar (RootScaffold uses SafeArea(top:
+              // false) on purpose, to match the PWA's fixed header), but
+              // the location/like/notification row itself was starting
+              // right at y=12, which sits underneath the phone's own
+              // status bar icons (network, battery, clock) on most
+              // devices. Push the actual content down by the real status
+              // bar height first, so only the background bleeds, not the
+              // row of icons.
+              padding: EdgeInsets.fromLTRB(16, 12 + MediaQuery.of(context).padding.top, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -355,8 +365,12 @@ class _DiscountCard extends StatelessWidget {
               width: 140,
               height: 130,
               child: product.thumbnail.isNotEmpty
-                  ? Image.network(product.thumbnail, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const _NoImg())
+                  ? CachedNetworkImage(
+                      imageUrl: product.thumbnail,
+                      fit: BoxFit.cover,
+                      placeholder: (context, _) => Container(color: AppTheme.skeleton(context)),
+                      errorWidget: (_, __, ___) => const _NoImg(),
+                    )
                   : const _NoImg(),
             ),
             Expanded(

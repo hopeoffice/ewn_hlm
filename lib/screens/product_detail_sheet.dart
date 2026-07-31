@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../state/app_state.dart';
@@ -57,14 +58,27 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
               ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  // BUGFIX: was a fixed `SizedBox(height: 260)` with
-                  // `BoxFit.cover` on every image — always cropped, even
-                  // for a single portrait photo. Web's CSS uses
-                  // `aspect-ratio: 4/3` for the carousel box, and
-                  // `object-fit: contain` (no crop) for single-image
-                  // products vs `cover` (crop-to-fill) only when there are
-                  // multiple images. Mirrored here 1:1.
-                  AspectRatio(
+                  // BUGFIX (#2): a single-image product used to always sit
+                  // inside a fixed 4/3 box with `BoxFit.contain`, which
+                  // left visible black bars on the left/right for any
+                  // photo that wasn't already 4:3. Per the request, a
+                  // single photo should use the full width with no gaps,
+                  // and its height should simply follow the photo's own
+                  // aspect ratio. The multi-image carousel (swipeable,
+                  // needs a fixed box so pages line up) keeps the
+                  // original 4/3 + cover + dots treatment below.
+                  if (images.length <= 1)
+                    images[0].isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: images[0],
+                            width: double.infinity,
+                            fit: BoxFit.fitWidth,
+                            placeholder: (context, _) => Container(height: 220, color: AppTheme.skeleton(context)),
+                            errorWidget: (_, __, ___) => Container(height: 220, color: AppTheme.brand),
+                          )
+                        : Container(height: 220, color: AppTheme.brand)
+                  else
+                    AspectRatio(
                     aspectRatio: 4 / 3,
                     child: Stack(
                       children: [
@@ -73,13 +87,12 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                           itemCount: images.length,
                           onPageChanged: (i) => setState(() => _carouselIndex = i),
                           itemBuilder: (context, i) => images[i].isNotEmpty
-                              ? Container(
-                                  color: images.length > 1 ? null : Colors.black,
-                                  child: Image.network(
-                                    images[i],
-                                    fit: images.length > 1 ? BoxFit.cover : BoxFit.contain,
-                                    width: double.infinity,
-                                  ),
+                              ? CachedNetworkImage(
+                                  imageUrl: images[i],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  placeholder: (context, _) => Container(color: AppTheme.skeleton(context)),
+                                  errorWidget: (_, __, ___) => Container(color: AppTheme.brand),
                                 )
                               : Container(color: AppTheme.brand),
                         ),
@@ -342,7 +355,14 @@ class _RoundIconButton extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), shape: BoxShape.circle),
-        child: Icon(icon, size: 17, color: iconColor ?? AppTheme.text(context)),
+        // BUGFIX (dark mode): this button's own background is always a
+        // near-opaque white circle (by design, so it stands out on top of
+        // any product photo) regardless of app theme. The icon color must
+        // therefore stay a fixed dark tone too — using the theme-aware
+        // AppTheme.text(context) here turned the "X" nearly white-on-white
+        // (invisible) in dark mode, even though the like button was fine
+        // because it always passes an explicit iconColor.
+        child: Icon(icon, size: 17, color: iconColor ?? Colors.black87),
       ),
     );
   }

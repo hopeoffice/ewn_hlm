@@ -6,6 +6,7 @@ import '../l10n/strings.dart';
 import '../state/app_state.dart';
 import '../services/wallet_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/coin_icon.dart';
 
 /// Share link format matches the `?ref=CODE` query param the PWA reads
 /// in index.html (`params.get('ref')`) — so a link shared from this
@@ -42,7 +43,10 @@ class ReferralScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(S.t('refer_invite', lang), style: const TextStyle(color: Colors.white70)),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 14),
+                      Text(S.t('refer_your_code_label', lang),
+                          style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+                      const SizedBox(height: 6),
                       Text(
                         code,
                         style: const TextStyle(
@@ -89,7 +93,7 @@ class ReferralScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 _statRow(context, S.t('refer_count_label', lang), '${app.referralCount}'),
-                _statRow(context, S.t('refer_coins_earned_label', lang), '$coinsEarned coins'),
+                _statRow(context, S.t('refer_coins_earned_label', lang), '$coinsEarned coins', icon: const CoinIcon(size: 14)),
                 _statRow(context, S.t('refer_cap_label', lang),
                     '${WalletService.maxReferralCountForCoins} ${S.t('refer_cap_unit', lang)}'),
                 if (capReached)
@@ -105,12 +109,15 @@ class ReferralScreen extends StatelessWidget {
     );
   }
 
-  Widget _statRow(BuildContext context, String label, String value) => Padding(
+  Widget _statRow(BuildContext context, String label, String value, {Widget? icon}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: TextStyle(color: AppTheme.text(context))),
+            Row(children: [
+              if (icon != null) ...[icon, const SizedBox(width: 6)],
+              Text(label, style: TextStyle(color: AppTheme.text(context))),
+            ]),
             Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.text(context))),
           ],
         ),
