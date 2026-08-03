@@ -35,7 +35,7 @@ const Map<String, String> stringsEn = {
   'refer_coins_note': 'Earn {n} coins for every friend who signs up',
   'refer_copy_code': 'Copy code',
   'refer_code_copied': 'Code copied',
-  'refer_share': 'Share',
+  'refer_share': 'Share Link',
   'refer_share_text': '🌟 Join Ewn Hlm! Invite code: {code}\n{link}',
   'refer_count_label': '🤝 Friends referred',
   'refer_coins_earned_label': 'Coins earned',
@@ -67,6 +67,8 @@ const Map<String, String> stringsEn = {
   // ---- Auth flow (auth_sheet.dart) — new email+password verification
   // flow, replacing the old PIN + security-question flow entirely. ----
   'auth_invalid_phone': '❌ Enter a valid phone number (09xxxxxxxx or 07xxxxxxxx)',
+  'auth_welcome_brand': 'Welcome to Ewn Hlm Gebeya',
+  'auth_phone_sub': 'Enter your phone number to continue',
   'continue_btn': 'Continue',
   'checking': 'Checking...',
   'back': 'Back',
@@ -127,6 +129,11 @@ const Map<String, String> stringsEn = {
   'hc_input_placeholder': 'Type your question...',
   'hc_no_match': "Sorry! 🙏 I couldn't quite match that — please contact the Help Center.",
   'hc_faq_chips_label': 'Related questions:',
+  'hc_cat_label': 'How can I help? Choose a category:',
+  'hc_questions_label': 'Questions:',
+  'hc_show_more': 'Show more',
+  'hc_back_cats': '← Back to categories',
+  'hc_lang_switch': 'አማርኛ',
   // ---- Admin/support escalation ----
   'hc_no_match_cats': 'No problem — browse these categories, your answer is right here:',
   'hc_contact_support': '👤 Customer Support team',

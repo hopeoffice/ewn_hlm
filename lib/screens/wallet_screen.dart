@@ -95,6 +95,7 @@ class WalletScreen extends StatelessWidget {
                 child: _quickActionCard(
                   context,
                   icon: '🧾',
+                  iconAsset: 'assets/icons/icon_transaction.png',
                   label: lang == 'am' ? 'ትራንዛክሽን ታሪክ' : 'Transaction History',
                   onTap: () =>
                       Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TransactionHistoryScreen())),
@@ -142,6 +143,9 @@ class WalletScreen extends StatelessWidget {
                   Text(S.formatNumber(savingsCoins),
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.accent)),
                 ]),
+                const SizedBox(height: 2),
+                Text('≈ ${S.formatPrice(WalletService.coinsToEtb(savingsCoins), lang)}',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
               ],
             ),
           ),
@@ -192,7 +196,7 @@ class WalletScreen extends StatelessWidget {
     );
   }
 
-  Widget _quickActionCard(BuildContext context, {required String icon, required String label, required VoidCallback onTap}) {
+  Widget _quickActionCard(BuildContext context, {required String icon, String? iconAsset, required String label, required VoidCallback onTap}) {
     return Material(
       color: AppTheme.card(context),
       borderRadius: BorderRadius.circular(AppTheme.radius),
@@ -207,7 +211,9 @@ class WalletScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Text(icon, style: const TextStyle(fontSize: 20)),
+              iconAsset != null
+                  ? Image.asset(iconAsset, width: 22, height: 22)
+                  : Text(icon, style: const TextStyle(fontSize: 20)),
               const SizedBox(height: 5),
               Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
             ],
@@ -250,7 +256,7 @@ class TransactionHistoryScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('🧾', style: TextStyle(fontSize: 40)),
+                  Image.asset('assets/icons/icon_transaction.png', width: 40, height: 40),
                   const SizedBox(height: 8),
                   Text(isAm ? 'እስካሁን ምንም ትራንዛክሽን የለም' : 'No transactions yet',
                       style: TextStyle(color: AppTheme.textMuted(context))),
@@ -412,6 +418,20 @@ const _kPaymentMethods = [
   ('abyssinia', '🏦', 'አቢሲኒያ ባንክ', 'Bank of Abyssinia', '40987654321'),
 ];
 
+/// Ported from _PaymentMethod.accountLabel() in checkout_screen.dart — the
+/// small "ℹ️ ..." description shown above the account number in the
+/// product purchase section. The Buy/Sell coin forms were missing this
+/// same description above their own account numbers.
+const _kAccountLabels = {
+  'telebirr': ('ℹ️ ቴሌብር የንግድ ስልክ (MERCHANT ACCOUNT)', 'ℹ️ Telebirr Merchant Number'),
+  'cbe': ('ℹ️ የንግድ ባንክ አካውንት ቁጥር (CBE)', 'ℹ️ CBE Account Number'),
+  'abyssinia': ('ℹ️ የአቢሲኒያ ባንክ አካውንት ቁጥር', 'ℹ️ Bank of Abyssinia Account Number'),
+};
+String _accountLabelFor(String methodId, String lang) {
+  final l = _kAccountLabels[methodId]!;
+  return lang == 'am' ? l.$1 : l.$2;
+}
+
 /// Ported from the `.co-coin-note` danger-styled warning block added to
 /// the Buy/Sell/Transfer modals in the 2026-07-25 web revision.
 Widget _dangerNote(BuildContext context, String text) => Container(
@@ -440,12 +460,7 @@ Widget _confirmCheckbox(BuildContext context, {required bool value, required Str
     );
 
 Future<void> showBuyCoinsSheet(BuildContext context) {
-  return showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => const _BuyCoinsSheet(),
-  );
+  return Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _BuyCoinsSheet()));
 }
 
 class _BuyCoinsSheet extends StatefulWidget {
@@ -461,7 +476,6 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
   XFile? _receipt;
   Uint8List? _receiptPreview;
   bool _submitting = false;
-  bool _confirmed = false;
   bool _nameInvalid = false;
   bool _amountInvalid = false;
   bool _receiptInvalid = false;
@@ -490,26 +504,17 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
     final isAm = lang == 'am';
     final method = _kPaymentMethods.firstWhere((m) => m.$1 == _selectedMethod);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: AppTheme.card(context),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
-        ),
-        child: ListView(
-          controller: scrollController,
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(mainAxisSize: MainAxisSize.min, children: [
+          const CoinIcon(size: 20),
+          const SizedBox(width: 8),
+          Text(isAm ? 'coin ግዛ' : 'Buy Coins'),
+        ]),
+      ),
+      body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            Row(children: [
-              const CoinIcon(size: 20),
-              const SizedBox(width: 8),
-              Text(isAm ? 'coin ግዛ' : 'Buy Coins', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ]),
-            const SizedBox(height: 4),
             Text(isAm ? '1 coin = 0.068 ${S.t('etb', lang)}' : '1 Coin = 0.068 ${S.t('etb', lang)}',
                 style: TextStyle(color: AppTheme.textMuted(context), fontSize: 12)),
             const SizedBox(height: 16),
@@ -576,17 +581,25 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(color: AppTheme.tagBg(context), borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(method.$5, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.tagText(context))),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: method.$5));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('co_copy', lang)), duration: const Duration(seconds: 1)));
-                    },
-                    child: Text(S.t('co_copy', lang), style: TextStyle(color: AppTheme.tagText(context), fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text(_accountLabelFor(method.$1, lang),
+                      style: TextStyle(fontSize: 10.5, color: AppTheme.tagText(context).withOpacity(0.75))),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(method.$5, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.tagText(context))),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: method.$5));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('co_copy', lang)), duration: const Duration(seconds: 1)));
+                        },
+                        child: Text(S.t('co_copy', lang), style: TextStyle(color: AppTheme.tagText(context), fontWeight: FontWeight.bold, fontSize: 12)),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -647,26 +660,17 @@ class _BuyCoinsSheetState extends State<_BuyCoinsSheet> {
             ]),
             const SizedBox(height: 20),
 
-            _confirmCheckbox(
-              context,
-              value: _confirmed,
-              label: isAm ? 'መረጃው ትክክለኛ መሆኑን አረጋግጣለሁ' : 'I confirm this information is accurate',
-              onChanged: (v) => setState(() => _confirmed = v ?? false),
-            ),
-            const SizedBox(height: 8),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.brand, padding: const EdgeInsets.symmetric(vertical: 14)),
-                onPressed: (_submitting || !_confirmed) ? null : () => _submit(context, app, method),
+                onPressed: _submitting ? null : () => _submit(context, app, method),
                 child: _submitting
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white))
                     : Text(isAm ? 'ላክ ለማረጋገጫ' : 'Send for Confirmation', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
-        ),
       ),
     );
   }
@@ -834,9 +838,11 @@ class _CoinWalletScreenState extends State<CoinWalletScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(isAm ? 'ቀሪ ሂሳብ' : 'balance', style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
+                Text(isAm ? 'ቀሪ ሂሳብ' : 'balance',
+                    textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
                 const SizedBox(height: 4),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     const CoinIcon(size: 22),
@@ -1052,12 +1058,7 @@ Future<String?> promptWalletPassword(BuildContext context, String subtitle) asyn
 //  Buy Coins: the client never deducts its own balance directly.
 // ============================================================
 Future<void> showSellCoinsSheet(BuildContext context, double sellRate) {
-  return showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _SellCoinsSheet(sellRate: sellRate),
-  );
+  return Navigator.of(context).push(MaterialPageRoute(builder: (_) => _SellCoinsSheet(sellRate: sellRate)));
 }
 
 class _SellCoinsSheet extends StatefulWidget {
@@ -1072,7 +1073,6 @@ class _SellCoinsSheetState extends State<_SellCoinsSheet> {
   final _accountCtrl = TextEditingController();
   String _selectedMethod = 'telebirr';
   bool _submitting = false;
-  bool _confirmed = false;
   bool _amountInvalid = false;
   bool _accountInvalid = false;
 
@@ -1093,26 +1093,17 @@ class _SellCoinsSheetState extends State<_SellCoinsSheet> {
     final isAm = lang == 'am';
     final method = _kPaymentMethods.firstWhere((m) => m.$1 == _selectedMethod);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: AppTheme.card(context),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
-        ),
-        child: ListView(
-          controller: scrollController,
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(mainAxisSize: MainAxisSize.min, children: [
+          const CoinIcon(size: 20),
+          const SizedBox(width: 8),
+          Text(isAm ? 'coin ሽጥ' : 'Sell Coins'),
+        ]),
+      ),
+      body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            Row(children: [
-              const CoinIcon(size: 20),
-              const SizedBox(width: 8),
-              Text(isAm ? 'coin ሽጥ' : 'Sell Coins', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ]),
-            const SizedBox(height: 10),
 
             Container(
               padding: const EdgeInsets.all(12),
@@ -1177,26 +1168,17 @@ class _SellCoinsSheetState extends State<_SellCoinsSheet> {
             ),
             const SizedBox(height: 18),
 
-            _confirmCheckbox(
-              context,
-              value: _confirmed,
-              label: isAm ? 'መረጃው ትክክለኛ መሆኑን አረጋግጣለሁ' : 'I confirm this information is accurate',
-              onChanged: (v) => setState(() => _confirmed = v ?? false),
-            ),
-            const SizedBox(height: 8),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger, padding: const EdgeInsets.symmetric(vertical: 14)),
-                onPressed: (_submitting || !_confirmed) ? null : () => _submit(context, app, method),
+                onPressed: _submitting ? null : () => _submit(context, app, method),
                 child: _submitting
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white))
                     : Text(isAm ? 'ላክ ለማረጋገጫ' : 'Send for Confirmation', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
-        ),
       ),
     );
   }
@@ -1275,12 +1257,7 @@ class _SellCoinsSheetState extends State<_SellCoinsSheet> {
 //  approval step (unlike Buy/Sell).
 // ============================================================
 Future<void> showTransferCoinsSheet(BuildContext context) {
-  return showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => const _TransferCoinsSheet(),
-  );
+  return Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _TransferCoinsSheet()));
 }
 
 class _TransferCoinsSheet extends StatefulWidget {
@@ -1312,22 +1289,11 @@ class _TransferCoinsSheetState extends State<_TransferCoinsSheet> {
     final lang = app.lang;
     final isAm = lang == 'am';
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      minChildSize: 0.4,
-      maxChildSize: 0.8,
-      expand: false,
-      builder: (context, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: AppTheme.card(context),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
-        ),
-        child: ListView(
-          controller: scrollController,
+    return Scaffold(
+      appBar: AppBar(title: Text(isAm ? '↔️ coin አስተላልፍ' : '↔️ Transfer Coins')),
+      body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            Text(isAm ? '↔️ coin አስተላልፍ' : '↔️ Transfer Coins', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
 
             Container(
               padding: const EdgeInsets.all(12),
@@ -1404,14 +1370,13 @@ class _TransferCoinsSheetState extends State<_TransferCoinsSheet> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.brand, padding: const EdgeInsets.symmetric(vertical: 14)),
-                onPressed: (_submitting || !_confirmed) ? null : () => _submit(context, app),
+                onPressed: _submitting ? null : () => _submit(context, app),
                 child: _submitting
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white))
                     : Text(isAm ? 'አስተላልፍ' : 'Transfer', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
-        ),
       ),
     );
   }
@@ -1449,6 +1414,11 @@ class _TransferCoinsSheetState extends State<_TransferCoinsSheet> {
     if (_coins > app.coins) {
       setState(() => _amountInvalid = true);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isAm ? '⚠️ በቂ coin የለዎትም' : "⚠️ You don't have enough coins")));
+      return;
+    }
+    if (!_confirmed) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(isAm ? '⚠️ የተቀባዩን ቁጥር ማረጋገጫ ላይ ምልክት ያድርጉ' : "⚠️ Please check the recipient's number confirmation box")));
       return;
     }
     if (!await requireOnlineOrWarn(context, lang)) return;

@@ -120,6 +120,7 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 _MenuItem(
                   emoji: '💰',
+                  iconAsset: 'assets/icons/icon_transaction.png',
                   title: S.t('my_account', lang),
                   sub: app.isAuthenticated ? '${app.coins} ${S.t('my_account_sub', lang)}' : S.t('my_account_sub', lang),
                   onTap: () => _requireAuth(context, app, () =>
@@ -149,6 +150,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 _MenuItem(
                   emoji: '🎧',
+                  iconAsset: 'assets/icons/icon_help_center.png',
                   title: S.t('help', lang),
                   sub: S.t('help_sub', lang),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
@@ -286,6 +288,7 @@ class _ThemeToggleItem extends StatelessWidget {
 /// Ported from .menu-item / .menu-icon / .menu-title / .menu-sub.
 class _MenuItem extends StatelessWidget {
   final String emoji;
+  final String? iconAsset;
   final String title;
   final String sub;
   final VoidCallback onTap;
@@ -294,6 +297,7 @@ class _MenuItem extends StatelessWidget {
 
   const _MenuItem({
     required this.emoji,
+    this.iconAsset,
     required this.title,
     required this.sub,
     required this.onTap,
@@ -320,7 +324,9 @@ class _MenuItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               alignment: Alignment.center,
-              child: Text(emoji, style: const TextStyle(fontSize: 18)),
+              child: iconAsset != null
+                  ? Image.asset(iconAsset!, width: 20, height: 20)
+                  : Text(emoji, style: const TextStyle(fontSize: 18)),
             ),
             const SizedBox(width: 14),
             Expanded(

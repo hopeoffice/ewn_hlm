@@ -12,12 +12,19 @@ class AppCategory {
   final String emoji;
   final String nameAm;
   final String nameEn;
+  // BUGFIX (icon set): a handful of categories now ship a proper PNG icon
+  // instead of relying on an emoji glyph (which renders inconsistently
+  // across devices/fonts). Null falls back to the emoji, same as before —
+  // this only applies to the known local ids below, never to
+  // server-provided categories.
+  final String? iconAsset;
 
   const AppCategory({
     required this.id,
     required this.emoji,
     required this.nameAm,
     required this.nameEn,
+    this.iconAsset,
   });
 
   String label(String lang) => lang == 'en' ? nameEn : nameAm;
@@ -46,8 +53,8 @@ const AppCategory kAllCategory = AppCategory(id: 'all', emoji: '🛍️', nameAm
 const List<AppCategory> kDefaultCategories = [
   kAllCategory,
   AppCategory(id: 'phones', emoji: '📱', nameAm: 'ስልኮች', nameEn: 'Phones'),
-  AppCategory(id: 'kitchen', emoji: '🍳', nameAm: 'የማእድቤት እቃዎች', nameEn: 'Kitchen'),
+  AppCategory(id: 'kitchen', emoji: '🍳', nameAm: 'የማእድቤት እቃዎች', nameEn: 'Kitchen', iconAsset: 'assets/icons/cat_kitchen.png'),
   AppCategory(id: 'laptops', emoji: '💻', nameAm: 'ላፕቶፕ', nameEn: 'Laptops'),
-  AppCategory(id: 'beauty_health', emoji: '💄', nameAm: 'ውበት', nameEn: 'Beauty'),
-  AppCategory(id: 'accessories', emoji: '🎮', nameAm: 'ልዩ ዕቃዎች', nameEn: 'Accessories'),
+  AppCategory(id: 'beauty_health', emoji: '💄', nameAm: 'ውበት', nameEn: 'Beauty', iconAsset: 'assets/icons/cat_beauty.png'),
+  AppCategory(id: 'accessories', emoji: '🎮', nameAm: 'ልዩ ዕቃዎች', nameEn: 'Accessories', iconAsset: 'assets/icons/cat_accessories.png'),
 ];

@@ -31,7 +31,10 @@ class LikesScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('🤍', style: TextStyle(fontSize: 48)),
+                  // BUGFIX: the '🤍' emoji glyph doesn't render on every
+                  // device/font (shows blank on some phones). A Material
+                  // icon renders identically everywhere.
+                  Icon(Icons.favorite_border, size: 48, color: AppTheme.textMuted(context)),
                   const SizedBox(height: 12),
                   Text(S.t('no_likes', lang), style: TextStyle(color: AppTheme.textMuted(context))),
                 ],
@@ -43,7 +46,7 @@ class LikesScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.62,
+                childAspectRatio: 0.56,
               ),
               itemCount: liked.length,
               itemBuilder: (context, i) {

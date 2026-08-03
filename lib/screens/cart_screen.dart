@@ -43,8 +43,40 @@ class CartScreen extends StatelessWidget {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    itemCount: app.cart.length,
+                    // +1 so the total/checkout summary renders as the last
+                    // row of the scrollable list — right after the last
+                    // cart item — instead of as a separate fixed banner
+                    // pinned to the bottom of the screen.
+                    itemCount: app.cart.length + 1,
                     itemBuilder: (context, i) {
+                      if (i == app.cart.length) {
+                        return Container(
+                          margin: const EdgeInsets.only(top: 6),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppTheme.card(context),
+                            borderRadius: BorderRadius.circular(AppTheme.radius),
+                            border: Border.all(color: AppTheme.line(context)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text('${S.t('cart_total', lang)}: ${S.formatPrice(app.cartTotal, lang)}',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.text(context))),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.brand,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                ),
+                                onPressed: () => _goToCheckout(context, app, null),
+                                child: Text(S.t('checkout', lang), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                       final item = app.cart[i];
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
@@ -144,31 +176,6 @@ class CartScreen extends StatelessWidget {
                     },
                   ),
           ),
-          if (app.cart.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text('${S.t('cart_total', lang)}: ${S.formatPrice(app.cartTotal, lang)}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.brand,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                    onPressed: () => _goToCheckout(context, app, null),
-                    child: Text(S.t('checkout', lang), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );

@@ -42,6 +42,8 @@ class OrdersScreen extends StatelessWidget {
                           final items = (o['items'] as List?)?.cast<Map>() ?? [];
                           final itemsSummary = items.map((it) => '${it['name']} x${it['qty']}').join('፣ ');
                           final coinsUsed = (o['coinsUsed'] as num?)?.toInt() ?? 0;
+                          final coinPercent = (o['coinPercent'] as num?)?.toInt() ?? 0;
+                          final isPartialCoin = coinPercent > 0 && coinPercent < 100;
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -82,7 +84,10 @@ class OrdersScreen extends StatelessWidget {
                                 if (o['paymentMethod'] != null)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 2),
-                                    child: Text('${o['paymentMethod']}',
+                                    child: Text(
+                                        isPartialCoin
+                                            ? '${o['paymentMethod']} (${S.formatPrice((o['total'] as num?) ?? 0, lang)})'
+                                            : '${o['paymentMethod']}',
                                         style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted(context))),
                                   ),
                                 if (status == 'cancelled' && (o['cancelReason'] as String?)?.isNotEmpty == true)

@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      const Text('📍', style: TextStyle(fontSize: 18)),
+                      Image.asset('assets/icons/icon_location.png', width: 18, height: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -106,6 +106,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               hintText: S.t('search', app.lang),
                               hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
                               border: InputBorder.none,
+                              // BUGFIX (dark mode): without this the field
+                              // inherits InputDecorationTheme's `filled:
+                              // true` + dark `fillColor`, painting a dark
+                              // box behind the (also dark) text below and
+                              // making anything typed invisible. This pill
+                              // already has its own white background, so
+                              // the field itself must stay unfilled.
+                              filled: false,
                               isDense: true,
                             ),
                             style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
@@ -219,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.62,
+                  childAspectRatio: 0.56,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, i) {
@@ -296,7 +304,7 @@ class _LocationBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text('📍', style: TextStyle(fontSize: 20)),
+          Image.asset('assets/icons/icon_location.png', width: 20, height: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(

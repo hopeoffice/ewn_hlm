@@ -33,7 +33,9 @@ class CategoryChip extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(category.emoji, style: const TextStyle(fontSize: 22)),
+            category.iconAsset != null
+                ? Image.asset(category.iconAsset!, width: 24, height: 24)
+                : Text(category.emoji, style: const TextStyle(fontSize: 22)),
             const SizedBox(height: 6),
             Text(
               category.label(lang),

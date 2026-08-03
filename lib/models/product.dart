@@ -141,4 +141,14 @@ class Product {
     }
     return [];
   }
+
+  /// Short description text for the product card (2-line summary).
+  /// Falls back through the same chain as [displayBullets], joined into a
+  /// single string, since the card only has room for a couple of lines.
+  String displayDescription(String lang) {
+    final bullets = displayBullets(lang);
+    if (bullets.isNotEmpty) return bullets.join(' • ');
+    final raw = lang == 'am' ? descriptionAm : description;
+    return (raw ?? '').trim();
+  }
 }

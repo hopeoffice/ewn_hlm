@@ -37,7 +37,7 @@ const Map<String, String> stringsAm = {
   'refer_coins_note': 'ለተመዘገበ ጓደኛ {n} coins ያገኛሉ',
   'refer_copy_code': 'ኮድ ቅዳ',
   'refer_code_copied': 'ኮድ ተቀድቷል',
-  'refer_share': 'አጋራ',
+  'refer_share': 'ሊንክ አጋራ',
   'refer_share_text': '🌟 Ewn Hlm ላይ ይግቡ! የግብዣ ኮድ: {code}\n{link}',
   'refer_count_label': '🤝 የጋበዙት ሰው ብዛት',
   'refer_coins_earned_label': 'ያገኙት coin',
@@ -72,6 +72,8 @@ const Map<String, String> stringsAm = {
   // submitVerifyCode/submitForgotCodeAndPassword), which replaced the old
   // PIN + security-question flow entirely. ----
   'auth_invalid_phone': '❌ ትክክለኛ ስልክ ቁጥር ያስገቡ (09xxxxxxxx ወይም 07xxxxxxxx)',
+  'auth_welcome_brand': 'እንኳን ወደ እውን ህልም ገበያ በደህና መጡ',
+  'auth_phone_sub': 'ለመቀጠል ስልክ ቁጥርዎን ያስገቡ',
   'continue_btn': 'ቀጥል',
   'checking': 'በማጣራት ላይ...',
   'back': 'ተመለስ',
@@ -133,6 +135,11 @@ const Map<String, String> stringsAm = {
   'hc_input_placeholder': 'ጥያቄዎን ይጻፉ...',
   'hc_no_match': 'ይቅርታ! 🙏 ለዚህ በትክክል መልስ ላልገባኝ፣ ግን አብረን እንፍታው። Help Center ን ያግኙ።',
   'hc_faq_chips_label': 'ተዛማጅ ጥያቄዎች:',
+  'hc_cat_label': 'ምን ላግዝዎ? ምድብ ይምረጡ:',
+  'hc_questions_label': 'ጥያቄዎች:',
+  'hc_show_more': 'ተጨማሪ አሳይ',
+  'hc_back_cats': '← ወደ ምድቦች ተመለስ',
+  'hc_lang_switch': 'English',
   // ---- Admin/support escalation (was entirely missing from the Flutter
   // Help Center — see hcShowSupportStep()/hcShowAdminForm()/hcSendToAdmin()
   // in main-ui.js) ----

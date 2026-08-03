@@ -22,14 +22,34 @@ class HelpCenterScreen extends StatefulWidget {
   State<HelpCenterScreen> createState() => _HelpCenterScreenState();
 }
 
+/// HC_PAGE_SIZE in main-ui.js — 5 FAQ chips shown per category page,
+/// with a "Show more" chip to reveal the next page.
+const _hcPageSize = 5;
+
 class _ChatMsg {
   final bool fromUser;
   final String text;
-  final List<Map<String, dynamic>>? chips; // suggested FAQ chips, bot-only
+  // Mutable (not final): once a newer chip-bearing bot message is added,
+  // BUGFIX — previously each old bot message kept its chips forever, so
+  // stale category/question chips from earlier in the conversation stayed
+  // tappable and visually piled up as the chat grew (old categories were
+  // never cleared before new ones got written further down the chat). We
+  // now null this out on superseded messages so only the most recent bot
+  // message ever shows live chips — mirroring the web app's single
+  // floating #hc-faq-chips element, which is always removed before a new
+  // one is appended.
+  List<Map<String, dynamic>>? chips;
+  // Only set for category-question-list messages, so a later language
+  // toggle can rebuild the same page of the same category in the new
+  // language (see _refreshLiveChipsLang()).
+  final String? chipsCategoryId;
+  final int chipsPage;
   _ChatMsg.user(this.text)
       : fromUser = true,
-        chips = null;
-  _ChatMsg.bot(this.text, {this.chips}) : fromUser = false;
+        chips = null,
+        chipsCategoryId = null,
+        chipsPage = 0;
+  _ChatMsg.bot(this.text, {this.chips, this.chipsCategoryId, this.chipsPage = 0}) : fromUser = false;
 }
 
 const _categories = [
@@ -61,6 +81,15 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   final _scrollCtrl = ScrollController();
   bool _loading = true;
 
+  // Ported from `_hcLang` in main-ui.js — the Help Center chatbot's own
+  // language toggle, independent of the app-wide language (state.lang).
+  // null = follow the app language; once the person taps the toggle it
+  // stays pinned to whatever they picked, same as the web app.
+  String? _hcLang;
+
+  /// Ported from hcGetLang() in main-ui.js.
+  String _currentLang() => _hcLang ?? context.read<AppState>().lang;
+
   @override
   void initState() {
     super.initState();
@@ -81,12 +110,49 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     } catch (_) {
       _faqs = await _loadBundledFaqs();
     }
-    final lang = mounted ? context.read<AppState>().lang : 'am';
+    final lang = _currentLang();
     setState(() {
       _loading = false;
       _messages.add(_ChatMsg.bot(S.t('hc_greeting_1', lang)));
       _messages.add(_ChatMsg.bot(S.t('hc_greeting_2', lang), chips: _categoryChips(lang)));
     });
+  }
+
+  /// Ported from hcToggleLang() in main-ui.js — flips the Help Center's
+  /// own language and re-renders whichever chip set is currently live
+  /// (category list or a category's question page) in the new language,
+  /// without retranslating the rest of the chat history.
+  void _toggleHcLang() {
+    setState(() {
+      _hcLang = _currentLang() == 'am' ? 'en' : 'am';
+      _refreshLiveChipsLang(_hcLang!);
+    });
+  }
+
+  /// Rebuilds the chips on the most recent bot message (if it has any) in
+  /// [lang] — category chips become the translated category list; a
+  /// question page becomes the same category/page re-fetched in [lang].
+  void _refreshLiveChipsLang(String lang) {
+    if (_messages.isEmpty) return;
+    final last = _messages.last;
+    if (last.fromUser || last.chips == null || last.chips!.isEmpty) return;
+    if (last.chipsCategoryId != null) {
+      last.chips = _questionsForCategory(last.chipsCategoryId!, lang, last.chipsPage);
+    } else if (last.chips!.first['kind'] == 'category') {
+      last.chips = _categoryChips(lang);
+    } else {
+      last.chips = _answerChips(last.chips!.any((c) => c['kind'] == 'support') ? 'orders' : null, lang);
+    }
+  }
+
+  /// BUGFIX (see _ChatMsg.chips doc) — clears chips off every earlier
+  /// message before a new chip-bearing message is added, so only the
+  /// latest bot message ever has live, tappable chips. Call this right
+  /// before appending any new message.
+  void _clearStaleChips() {
+    for (final m in _messages) {
+      m.chips = null;
+    }
   }
 
   Future<List<Map<String, dynamic>>> _loadBundledFaqs() async {
@@ -103,18 +169,51 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     return _categories.map((c) => {'kind': 'category', 'id': c.$1, 'emoji': c.$2, 'label': lang == 'en' ? c.$4 : c.$3}).toList();
   }
 
-  List<Map<String, dynamic>> _questionsForCategory(String cat, String lang) {
-    return _faqs.where((f) => f['category'] == cat).take(6).map((f) {
+  /// Ported from hcShowQuestionsForCategory() in main-ui.js — 5 questions
+  /// per page (HC_PAGE_SIZE), with a "Show more" chip appended when more
+  /// remain and a "Back to categories" chip always appended.
+  List<Map<String, dynamic>> _questionsForCategory(String cat, String lang, int page) {
+    final catFaqs = _faqs.where((f) => f['category'] == cat).toList();
+    final start = page * _hcPageSize;
+    final slice = catFaqs.skip(start).take(_hcPageSize);
+    final hasMore = catFaqs.length > start + _hcPageSize;
+
+    final chips = slice.map((f) {
       final q = lang == 'en' ? (f['question_en'] ?? f['question']) : f['question'];
       return {'kind': 'question', 'id': f['id'], 'label': q.toString()};
     }).toList();
+
+    if (hasMore) {
+      chips.add({'kind': 'more', 'catId': cat, 'page': page + 1, 'label': S.t('hc_show_more', lang)});
+    }
+    chips.add({'kind': 'back', 'label': S.t('hc_back_cats', lang)});
+    return chips;
   }
 
   void _onChipTap(Map<String, dynamic> chip, String lang) {
     if (chip['kind'] == 'category') {
       setState(() {
+        _clearStaleChips();
         _messages.add(_ChatMsg.user('${chip['emoji']} ${chip['label']}'));
-        _messages.add(_ChatMsg.bot(S.t('hc_faq_chips_label', lang), chips: _questionsForCategory(chip['id'], lang)));
+        _messages.add(_ChatMsg.bot(S.t('hc_faq_chips_label', lang),
+            chips: _questionsForCategory(chip['id'] as String, lang, 0),
+            chipsCategoryId: chip['id'] as String));
+      });
+    } else if (chip['kind'] == 'more') {
+      // "Show more" — same category, next page. Ported from the
+      // page+1 call in hcShowQuestionsForCategory()'s "hc-more-chip".
+      final catId = chip['catId'] as String;
+      final page = chip['page'] as int;
+      setState(() {
+        _clearStaleChips();
+        _messages.add(_ChatMsg.bot(S.t('hc_faq_chips_label', lang),
+            chips: _questionsForCategory(catId, lang, page), chipsCategoryId: catId, chipsPage: page));
+      });
+    } else if (chip['kind'] == 'back') {
+      // "Back to categories" — ported from hcShowCategoryChips().
+      setState(() {
+        _clearStaleChips();
+        _messages.add(_ChatMsg.bot(S.t('hc_cat_label', lang), chips: _categoryChips(lang)));
       });
     } else if (chip['kind'] == 'support') {
       _showSupportStep(lang);
@@ -135,6 +234,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         if (_messages.isNotEmpty && !_messages.last.fromUser && _messages.last.chips != null) {
           _messages.removeLast();
         }
+        _clearStaleChips();
         _messages.add(_ChatMsg.user(chip['label'] as String));
         _messages.add(_ChatMsg.bot(answer.toString(),
             chips: _answerChips(faq['category'] as String?, lang)));
@@ -161,6 +261,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   /// Ported from hcShowSupportStep() in main-ui.js.
   void _showSupportStep(String lang) {
     setState(() {
+      _clearStaleChips();
       _messages.add(_ChatMsg.bot(
         S.t('hc_contact_support_msg', lang),
         chips: [
@@ -253,9 +354,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   void _send() {
     final text = _inputCtrl.text.trim();
     if (text.isEmpty) return;
-    final lang = context.read<AppState>().lang;
+    final lang = _currentLang();
     _inputCtrl.clear();
-    setState(() => _messages.add(_ChatMsg.user(text)));
+    setState(() {
+      _clearStaleChips();
+      _messages.add(_ChatMsg.user(text));
+    });
 
     final match = _bestMatch(text, lang);
     setState(() {
@@ -280,13 +384,41 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<AppState>().lang;
+    // Rebuild when the app language changes (so it still tracks it while
+    // no manual Help Center override is set), but _currentLang() prefers
+    // _hcLang once the person has tapped the toggle — ported from
+    // hcGetLang() in main-ui.js.
+    context.watch<AppState>().lang;
+    final lang = _currentLang();
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         title: Text(S.t('hc_title', lang)),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.of(context).pop()),
+        actions: [
+          // Ported from .hc-lang-btn / hcToggleLang() in main-ui.js — the
+          // Help Center previously had no way to switch its own language
+          // at all.
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: OutlinedButton(
+                onPressed: _toggleHcLang,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.brand,
+                  side: const BorderSide(color: AppTheme.brand, width: 1.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: const Size(0, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: Text(S.t('hc_lang_switch', lang),
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -321,9 +453,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 // BUGFIX: the web app always shows a small bot avatar
                 // (hc-bot-icon) to the left of every bot bubble via
                 // hcAddMessage(); Flutter had no equivalent at all, so bot
-                // replies looked anonymous. TODO: swap this emoji for the
-                // icons8 "nolan/bot" asset once it's added under
-                // assets/icons/bot.png.
+                // replies looked anonymous. Now uses the provided chatbot
+                // icon asset instead of the fallback emoji.
                 if (!m.fromUser) ...[
                   Container(
                     width: 26,
@@ -331,7 +462,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     margin: const EdgeInsets.only(right: 6),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(color: AppTheme.tagBg(context), shape: BoxShape.circle),
-                    child: const Text('🤖', style: TextStyle(fontSize: 14)),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset('assets/icons/icon_chatbot.png', width: 26, height: 26, fit: BoxFit.cover),
                   ),
                 ],
                 Flexible(
@@ -350,23 +482,105 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               ],
             ),
           ),
-          if (m.chips != null && m.chips!.isNotEmpty)
+          if (m.chips != null && m.chips!.isNotEmpty) _buildChipGroup(m.chips!, lang),
+        ],
+      ),
+    );
+  }
+
+  /// Ported from .hc-chips / .hc-chips-col in main-ui.js's injected CSS.
+  /// Question chips stack in a tight vertical column (gap 6, like
+  /// .hc-chips-col), while category/support/nav chips wrap in a row (gap
+  /// 8, like the default .hc-chips). BUGFIX: previously every chip used
+  /// Flutter's default Material ActionChip, whose built-in minimum touch
+  /// target (~48dp tall) made rows of wrapped chips — and every stacked
+  /// question — look far more spaced out than the compact web design.
+  /// These are now plain tight Containers instead.
+  Widget _buildChipGroup(List<Map<String, dynamic>> chips, String lang) {
+    final questionChips = chips.where((c) => c['kind'] == 'question').toList();
+    final navChips = chips.where((c) => c['kind'] == 'more' || c['kind'] == 'back').toList();
+    final otherChips = chips.where((c) => c['kind'] != 'question' && c['kind'] != 'more' && c['kind'] != 'back').toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (questionChips.isNotEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (int i = 0; i < questionChips.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 6),
+                  _hcChip(questionChips[i]['label'] as String, () => _onChipTap(questionChips[i], lang),
+                      fullWidth: true, outline: false),
+                ],
+              ],
+            ),
+          if (navChips.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: EdgeInsets.only(top: questionChips.isNotEmpty ? 4 : 0),
               child: Wrap(
                 spacing: 8,
-                runSpacing: 8,
-                children: m.chips!.map((c) {
+                runSpacing: 6,
+                children: navChips.map((c) {
+                  final isMore = c['kind'] == 'more';
+                  return _hcChip(c['label'] as String, () => _onChipTap(c, lang), filled: isMore, muted: !isMore);
+                }).toList(),
+              ),
+            ),
+          if (otherChips.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: questionChips.isNotEmpty || navChips.isNotEmpty ? 6 : 0),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: otherChips.map((c) {
                   final label = c['kind'] == 'category' ? '${c['emoji']} ${c['label']}' : c['label'] as String;
-                  return ActionChip(
-                    label: Text(label, style: TextStyle(fontSize: 12, color: AppTheme.tagText(context))),
-                    backgroundColor: AppTheme.tagBg(context),
-                    onPressed: () => _onChipTap(c, lang),
-                  );
+                  return _hcChip(label, () => _onChipTap(c, lang), outline: c['kind'] == 'category');
                 }).toList(),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// Compact pill button — mirrors .hc-chip's tight CSS padding (7px
+  /// 14px, 20px radius) instead of Material's roomier default chip.
+  Widget _hcChip(String label, VoidCallback onTap,
+      {bool fullWidth = false, bool outline = false, bool filled = false, bool muted = false}) {
+    final Color bg = filled ? AppTheme.brand : AppTheme.card(context);
+    final Color fg = filled
+        ? Colors.white
+        : outline
+            ? AppTheme.brand
+            : muted
+                ? AppTheme.textMuted(context)
+                : AppTheme.text(context);
+    final Color borderColor = filled
+        ? Colors.transparent
+        : outline
+            ? AppTheme.brand
+            : AppTheme.line(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          width: fullWidth ? double.infinity : null,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: outline ? 1.5 : 1),
+          ),
+          child: Text(label,
+              textAlign: TextAlign.left,
+              style: TextStyle(fontSize: 12.5, color: fg, fontWeight: outline || filled ? FontWeight.w600 : FontWeight.normal)),
+        ),
       ),
     );
   }

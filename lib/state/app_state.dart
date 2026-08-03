@@ -901,15 +901,19 @@ class AppState extends ChangeNotifier {
 
   // ---------------- Likes ----------------
 
-  void toggleLike(String productId) {
+  Future<void> toggleLike(String productId) async {
     if (likes.contains(productId)) {
       likes.remove(productId);
     } else {
       likes.add(productId);
     }
-    StorageService.saveLikes(likes);
-    if (isAuthenticated) _fb.syncLikes(user!.phone, likes);
+    // Update UI immediately, then persist. Awaiting here (instead of
+    // firing-and-forgetting) matters: previously the Hive write could
+    // lose the race if the app was backgrounded/killed right after a
+    // like, silently reverting to an empty list on next launch.
     notifyListeners();
+    await StorageService.saveLikes(likes);
+    if (isAuthenticated) _fb.syncLikes(user!.phone, likes);
   }
 
   // ---------------- Category / search filter ----------------
@@ -944,9 +948,19 @@ class AppState extends ChangeNotifier {
 
   /// Mirrors the #discount-section in index.html — only products with a
   /// real discountedPrice < price, shown ahead of the main grid.
+  ///
+  /// BUGFIX: this used to ignore `activeCategory`, so e.g. the "Phone"
+  /// category page would still show discounted products from every other
+  /// category in this strip. Scope it the same way `filteredProducts` is
+  /// scoped, so the discounts shown always belong to the category the
+  /// person is currently looking at (or all categories, on the "all" tab).
   List<Product> get discountedProducts {
     return products
-        .where((p) => !p.hidden && p.discountedPrice != null && p.discountedPrice! < p.price)
+        .where((p) =>
+            !p.hidden &&
+            p.discountedPrice != null &&
+            p.discountedPrice! < p.price &&
+            (activeCategory == 'all' || p.category == activeCategory))
         .toList();
   }
 

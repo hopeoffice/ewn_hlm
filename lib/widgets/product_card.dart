@@ -98,10 +98,25 @@ class ProductCard extends StatelessWidget {
                   children: [
                     Text(
                       product.displayName(app.lang),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.text(context), height: 1.4),
                     ),
+                    // BUGFIX: description was never rendered on the card at
+                    // all. Show it under the name, capped at 2 lines.
+                    Builder(builder: (context) {
+                      final desc = product.displayDescription(app.lang);
+                      if (desc.isEmpty) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          desc,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 11, color: AppTheme.textMuted(context), height: 1.3),
+                        ),
+                      );
+                    }),
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Wrap(

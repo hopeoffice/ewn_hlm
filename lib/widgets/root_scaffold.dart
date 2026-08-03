@@ -167,10 +167,10 @@ class _RootScaffoldState extends State<RootScaffold> with WidgetsBindingObserver
         top: false,
         child: Container(
           height: 64,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(top: BorderSide(color: Color(0xFFE8E8E8))),
-            boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 20, offset: Offset(0, -4))],
+          decoration: BoxDecoration(
+            color: AppTheme.navBg(context),
+            border: Border(top: BorderSide(color: AppTheme.navBorder(context))),
+            boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 20, offset: Offset(0, -4))],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -209,7 +209,9 @@ class _RootScaffoldState extends State<RootScaffold> with WidgetsBindingObserver
                           style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: active ? AppTheme.brand : AppTheme.textMuted(context))),
+                              color: active
+                                  ? (AppTheme.isDark(context) ? AppTheme.accent : AppTheme.brand)
+                                  : AppTheme.textMuted(context))),
                     ],
                   ),
                 ),

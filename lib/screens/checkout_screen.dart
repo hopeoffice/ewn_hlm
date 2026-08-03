@@ -135,23 +135,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ...items.map((i) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 3),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Name only — allowed to wrap onto a 2nd line
+                            // instead of being force-truncated to 1 line,
+                            // and kept separate from qty/color/price below
+                            // so those can never be eaten by its ellipsis.
                             Expanded(
-                              child: Row(
-                                children: [
-                                  Flexible(child: Text('${i.name} × ${i.qty}', overflow: TextOverflow.ellipsis)),
-                                  if (i.color != null) ...[
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(color: _parseHexColor(i.color!), shape: BoxShape.circle),
-                                    ),
-                                  ],
-                                ],
-                              ),
+                              child: Text(i.name, maxLines: 2, overflow: TextOverflow.ellipsis),
                             ),
+                            const SizedBox(width: 6),
+                            Text('× ${i.qty}'),
+                            if (i.color != null) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                width: 10,
+                                height: 10,
+                                margin: const EdgeInsets.only(top: 4),
+                                decoration: BoxDecoration(color: _parseHexColor(i.color!), shape: BoxShape.circle),
+                              ),
+                            ],
+                            const SizedBox(width: 8),
                             Text(S.formatPrice(i.lineTotal, lang)),
                           ],
                         ),

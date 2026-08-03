@@ -89,6 +89,12 @@ class AppTheme {
   static Color tagText(BuildContext context) => isDark(context) ? tagTextDark : tagTextLight;
   static Color header(BuildContext context) => isDark(context) ? bgHeaderDark : bgHeaderLight;
   static Color skeleton(BuildContext context) => isDark(context) ? skeletonDark : skeletonLight;
+  // ---- BUGFIX (dark mode): the bottom nav bar (#bottom-nav) was hardcoded
+  // to the light navBg/navBorder colors, so home/cart/order/profile stayed
+  // white while the rest of the app went dark. Use these instead of the
+  // static navBgLight/navBorderLight constants directly.
+  static Color navBg(BuildContext context) => isDark(context) ? navBgDark : navBgLight;
+  static Color navBorder(BuildContext context) => isDark(context) ? navBorderDark : navBorderLight;
 
   // ---- BUGFIX (dark mode contrast): a "soft cream/gold" box (e.g. the
   // checkout Total Cost card) used to be a hardcoded light-only
