@@ -57,6 +57,7 @@ flutter:
   assets:
     - assets/faq_data.json
     - assets/icon/icon.png
+    - assets/icon/splash_icon.png
     - assets/icons/
     - assets/illustrations/offline-illustration.png
   fonts:
@@ -79,19 +80,28 @@ flutter_launcher_icons:
 
 # ---- flutter_native_splash config — replaces the default Flutter-logo
 # native splash (shown briefly before the Flutter engine/widgets even
-# load) with the same image, on the app's brand green (matches
-# AppTheme.brand / splashBgLight in app_theme.dart, and the in-Dart
-# SplashGate background) instead of the old orange. Run via:
-# `dart run flutter_native_splash:create` (already wired into
-# codemagic.yaml). This is the NATIVE splash — separate from (and shown
-# just before) the in-Dart `SplashGate` widget in
-# lib/widgets/splash_gate.dart, which still runs afterward. ----
+# load) with our own logo. Run via: `dart run flutter_native_splash:create`
+# (already wired into codemagic.yaml). This is the NATIVE splash —
+# separate from (and shown just before) the in-Dart `SplashGate` widget
+# in lib/widgets/splash_gate.dart, which still runs afterward.
+#
+# `color` used to be the app's brand green (#0D5C42 — AppTheme.brand),
+# but icon.png's own background is a lighter flat green (#3BBE7B), so the
+# logo square showed up as a visibly mismatched box on the full-screen
+# background instead of blending in. `color` is now set to that same
+# #3BBE7B so the screen and the logo's background are seamless.
+#
+# `image` now points at splash_icon.png — a larger render of the same
+# artwork (900x900 vs. the 499x499 icon.png) — since flutter_native_splash
+# sizes the on-screen logo directly off the source image's pixel
+# dimensions, so the small icon.png was rendering as a small logo on the
+# splash screen even though it looks fine at launcher-icon size elsewhere.
 flutter_native_splash:
-  color: "#0D5C42"
-  image: assets/icon/icon.png
+  color: "#3BBE7B"
+  image: assets/icon/splash_icon.png
   android: true
   ios: false
   android_12:
-    image: assets/icon/icon.png
-    color: "#0D5C42"
+    image: assets/icon/splash_icon.png
+    color: "#3BBE7B"
 

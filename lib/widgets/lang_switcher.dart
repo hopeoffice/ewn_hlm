@@ -12,9 +12,17 @@ class LangSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // This pill is used on AppBars/sheets that are themselves brand-green
+    // (see AppTheme's appBarTheme). It used to rely on the *brand* color
+    // for its border, unselected text, and even the transparent segment
+    // fill — so on a green header everything but the selected label's
+    // white text blended straight into the background and "disappeared".
+    // Giving the pill its own white base fixes that regardless of what
+    // it's placed on top of.
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
+        color: Colors.white,
         border: Border.all(color: AppTheme.brand, width: 1.2),
         borderRadius: BorderRadius.circular(16),
       ),
