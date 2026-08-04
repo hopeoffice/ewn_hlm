@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import '../services/wallet_service.dart';
 import '../widgets/offline_overlay.dart';
 import '../widgets/coin_icon.dart';
+import '../widgets/password_field.dart';
 
 /// Ported from PAYMENT_METHODS in main-actions.js. NOTE: these are the
 /// same fallback numbers the web app itself hardcodes at load time —
@@ -132,31 +134,70 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 children: [
                   Text(S.t('co_summary', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   const SizedBox(height: 8),
+                  // BUGFIX: this used to cram photo-less name + qty + color
+                  // dot + total price into a single row, so long product
+                  // names squeezed everything else. Now: small photo on
+                  // the left, and to its right — name, qty, color (if
+                  // any), and total price stacked one per line.
                   ...items.map((i) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Name only — allowed to wrap onto a 2nd line
-                            // instead of being force-truncated to 1 line,
-                            // and kept separate from qty/color/price below
-                            // so those can never be eaten by its ellipsis.
-                            Expanded(
-                              child: Text(i.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            ),
-                            const SizedBox(width: 6),
-                            Text('× ${i.qty}'),
-                            if (i.color != null) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                width: 10,
-                                height: 10,
-                                margin: const EdgeInsets.only(top: 4),
-                                decoration: BoxDecoration(color: _parseHexColor(i.color!), shape: BoxShape.circle),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                color: AppTheme.card(context),
+                                child: i.image.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: i.image,
+                                        fit: BoxFit.cover,
+                                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                                      )
+                                    : null,
                               ),
-                            ],
-                            const SizedBox(width: 8),
-                            Text(S.formatPrice(i.lineTotal, lang)),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // 1st line: name
+                                  Text(i.name,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  // 2nd line: quantity
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text('× ${i.qty}', style: const TextStyle(fontSize: 12)),
+                                  ),
+                                  // 3rd line: color, only if the item has one
+                                  if (i.color != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: BoxDecoration(
+                                                color: _parseHexColor(i.color!), shape: BoxShape.circle),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  // 4th line: qty * price total
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(S.formatPrice(i.lineTotal, lang),
+                                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       )),
@@ -433,18 +474,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
           title: Text(lang == 'am' ? '🔒 ፓስዎርድዎን ያረጋግጡ' : '🔒 Confirm Your Password'),
-          content: TextField(
-            controller: ctrl,
-            keyboardType: TextInputType.number,
-            maxLength: 4,
-            obscureText: true,
-            autofocus: true,
-            enabled: !checking,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              errorText: error,
-              hintText: '••••',
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PasswordField(
+                controller: ctrl,
+                labelText: S.t('pin_code', lang),
+                autofocus: true,
+                enabled: !checking,
+              ),
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(error!, style: const TextStyle(color: AppTheme.danger, fontSize: 12)),
+                ),
+            ],
           ),
           actions: [
             TextButton(

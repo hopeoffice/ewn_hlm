@@ -8,6 +8,7 @@ import '../l10n/strings.dart';
 import '../widgets/offline_overlay.dart';
 import '../services/firebase_service.dart';
 import '../services/faq_matcher.dart';
+import '../widgets/lang_switcher.dart';
 
 /// Ported from #screen-help-center / renderHelpCenter() chatbot in
 /// main-ui.js. FAQs load from Firebase (settings/faq) first, falling
@@ -115,17 +116,6 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       _loading = false;
       _messages.add(_ChatMsg.bot(S.t('hc_greeting_1', lang)));
       _messages.add(_ChatMsg.bot(S.t('hc_greeting_2', lang), chips: _categoryChips(lang)));
-    });
-  }
-
-  /// Ported from hcToggleLang() in main-ui.js — flips the Help Center's
-  /// own language and re-renders whichever chip set is currently live
-  /// (category list or a category's question page) in the new language,
-  /// without retranslating the rest of the chat history.
-  void _toggleHcLang() {
-    setState(() {
-      _hcLang = _currentLang() == 'am' ? 'en' : 'am';
-      _refreshLiveChipsLang(_hcLang!);
     });
   }
 
@@ -397,24 +387,19 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         title: Text(S.t('hc_title', lang)),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.of(context).pop()),
         actions: [
-          // Ported from .hc-lang-btn / hcToggleLang() in main-ui.js — the
-          // Help Center previously had no way to switch its own language
-          // at all.
+          // BUGFIX: was a single OutlinedButton that only showed the
+          // *other* language's name (tap to flip). Replaced with the
+          // same Am/Eng segmented LangSwitcher used elsewhere, so both
+          // options are visible and either can be tapped directly.
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Center(
-              child: OutlinedButton(
-                onPressed: _toggleHcLang,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.brand,
-                  side: const BorderSide(color: AppTheme.brand, width: 1.5),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  minimumSize: const Size(0, 32),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: Text(S.t('hc_lang_switch', lang),
-                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+              child: LangSwitcher(
+                currentLang: lang,
+                onChanged: (l) => setState(() {
+                  _hcLang = l;
+                  _refreshLiveChipsLang(l);
+                }),
               ),
             ),
           ),

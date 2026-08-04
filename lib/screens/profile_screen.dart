@@ -120,7 +120,12 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 _MenuItem(
                   emoji: '💰',
-                  iconAsset: 'assets/icons/icon_transaction.png',
+                  // BUGFIX: this used to reuse icon_transaction.png — the
+                  // exact same icon shown for each transaction row inside
+                  // the wallet screen itself — so the "My Wallet" menu
+                  // entry visually blended in with transaction history.
+                  // Use a dedicated wallet icon instead.
+                  iconAsset: 'assets/icons/icon_wallet.png',
                   title: S.t('my_account', lang),
                   sub: app.isAuthenticated ? '${app.coins} ${S.t('my_account_sub', lang)}' : S.t('my_account_sub', lang),
                   onTap: () => _requireAuth(context, app, () =>

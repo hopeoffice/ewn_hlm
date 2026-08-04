@@ -227,7 +227,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.56,
+                  // BUGFIX: was 0.56 (tall cells), which combined with the
+                  // spaceBetween text column left huge empty gaps inside
+                  // each card. Now that the text sizes to its own content,
+                  // 0.66 keeps the card compact and close-fitting.
+                  childAspectRatio: 0.66,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, i) {

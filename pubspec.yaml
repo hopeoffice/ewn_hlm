@@ -79,18 +79,19 @@ flutter_launcher_icons:
 
 # ---- flutter_native_splash config — replaces the default Flutter-logo
 # native splash (shown briefly before the Flutter engine/widgets even
-# load) with the same image, on a background matching the image's own
-# solid-orange corners so it blends seamlessly on any screen size. Run
-# via: `dart run flutter_native_splash:create` (already wired into
+# load) with the same image, on the app's brand green (matches
+# AppTheme.brand / splashBgLight in app_theme.dart, and the in-Dart
+# SplashGate background) instead of the old orange. Run via:
+# `dart run flutter_native_splash:create` (already wired into
 # codemagic.yaml). This is the NATIVE splash — separate from (and shown
 # just before) the in-Dart `SplashGate` widget in
 # lib/widgets/splash_gate.dart, which still runs afterward. ----
 flutter_native_splash:
-  color: "#FF6D00"
+  color: "#0D5C42"
   image: assets/icon/icon.png
   android: true
   ios: false
   android_12:
     image: assets/icon/icon.png
-    color: "#FF6D00"
+    color: "#0D5C42"
 

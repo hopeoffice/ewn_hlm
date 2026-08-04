@@ -11,6 +11,7 @@ import '../l10n/strings.dart';
 import '../widgets/offline_overlay.dart';
 import '../widgets/coin_candlestick_chart.dart';
 import '../widgets/coin_icon.dart';
+import '../widgets/password_field.dart';
 
 /// Ported from renderMyAccount() (balance) + openBuyCoinsModal()/
 /// submitBuyCoins() (buy form) + renderTransactionHistoryScreen()
@@ -1003,13 +1004,11 @@ Future<String?> promptWalletPassword(BuildContext context, String subtitle) asyn
           children: [
             Text(subtitle, style: TextStyle(color: AppTheme.textMuted(dialogContext))),
             const SizedBox(height: 12),
-            TextField(
+            PasswordField(
               controller: passwordCtrl,
               autofocus: true,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 4,
-              decoration: InputDecoration(labelText: S.t('pin_code', lang), border: const OutlineInputBorder(), counterText: ''),
+              labelText: S.t('pin_code', lang),
+              counterText: '',
             ),
             if (error != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(error!, style: const TextStyle(color: AppTheme.danger, fontSize: 12))),
           ],

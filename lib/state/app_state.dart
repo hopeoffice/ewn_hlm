@@ -85,11 +85,24 @@ class AppState extends ChangeNotifier {
     lang = StorageService.getString('ewn_lang') ?? 'am';
 
     user = await StorageService.restoreSession();
+    // Seed from whatever was last cached locally so the header doesn't
+    // flash "getting location" on cold start; _syncFromRemoteOnRestore
+    // below refreshes this from Firebase right after, for both logged-in
+    // and guest sessions.
+    _locationSaved = StorageService.getString('ewn_location_saved') == '1';
+    locationName = StorageService.getString('ewn_location_name');
     if (user != null) {
       _watchCoins(user!.phone);
       _watchOrders(user!.phone);
       PushService.registerForUser(user!.phone);
       _loadReferralInfo(user!.phone);
+      // BUGFIX: a session restored from the cached login (no server
+      // round-trip) used to skip Firebase entirely — cart/likes stayed
+      // whatever was last cached on *this* device, and location fell
+      // back to the local cache instead of ever checking Firebase again.
+      // Pull the account's Firebase record once on startup and merge it
+      // in, same as a fresh interactive login does.
+      unawaited(_syncFromRemoteOnRestore(user!.phone));
     }
     notifications = StorageService.loadNotifications();
     _watchNotifications();
@@ -153,6 +166,19 @@ class AppState extends ChangeNotifier {
     }
     await StorageService.saveOrders(orders);
 
+    // BUGFIX: cart and likes were pushed TO Firebase (syncCartDebounced /
+    // syncLikes) but never pulled back down on login, so logging in on a
+    // new device/browser silently lost whatever cart/likes were already
+    // saved under this account. Merge them in the same way orders are
+    // merged above, so nothing from either side is dropped.
+    _mergeRemoteCart(data['cart']);
+    _mergeRemoteLikes(data['likes']);
+    await StorageService.saveCart(cart);
+    await StorageService.saveLikes(likes);
+    // Push the merged result back so both sides agree afterward.
+    _fb.syncCartDebounced(phone, cart);
+    _fb.syncLikes(phone, likes);
+
     final deviceId = StorageService.getOrCreateDeviceId();
     try {
       await _fb.linkDeviceToUser(phone, deviceId);
@@ -160,18 +186,7 @@ class AppState extends ChangeNotifier {
       // Non-fatal — login should still succeed even if this write fails.
     }
 
-    // ---- Location: DB ውስጥ cityName ካለ header ላይ ያሳዩ (Task #13) ----
-    final loc = data['location'] as Map?;
-    final cityName = loc?['cityName'] as String?;
-    if (cityName != null && cityName.isNotEmpty) {
-      locationName = cityName;
-      _locationSaved = true;
-      await StorageService.setString('ewn_location_saved', '1');
-      await StorageService.setString('ewn_location_name', cityName);
-    } else {
-      _locationSaved = StorageService.getString('ewn_location_saved') == '1';
-      locationName = StorageService.getString('ewn_location_name');
-    }
+    _applyRemoteLocation(data['location'] as Map?);
 
     _watchCoins(phone);
     _watchOrders(phone);
@@ -179,6 +194,72 @@ class AppState extends ChangeNotifier {
     _loadReferralInfo(phone);
     _watchNotifications();
     notifyListeners();
+  }
+
+  /// Adds remote cart lines (users/{phone}/cart) that aren't already
+  /// present locally (matched by product id + color), and bumps the
+  /// local quantity up to the remote one when a line exists on both
+  /// sides but the remote qty is higher — mirrors the additive spirit of
+  /// the orders merge just above, applied to cart lines.
+  void _mergeRemoteCart(dynamic raw) {
+    if (raw is! List) return;
+    for (final entry in raw) {
+      if (entry is! Map) continue;
+      final remote = CartItem.fromMap(Map<String, dynamic>.from(entry));
+      final idx = cart.indexWhere((c) => c.id == remote.id && c.color == remote.color);
+      if (idx == -1) {
+        cart.add(remote);
+      } else if (remote.qty > cart[idx].qty) {
+        cart[idx].qty = remote.qty;
+      }
+    }
+  }
+
+  /// Unions remote likes (users/{phone}/likes) into the local list.
+  void _mergeRemoteLikes(dynamic raw) {
+    if (raw is! List) return;
+    for (final id in raw) {
+      final s = id?.toString();
+      if (s != null && s.isNotEmpty && !likes.contains(s)) likes.add(s);
+    }
+  }
+
+  /// Ported from the "DB ውስጥ cityName ካለ header ላይ ያሳዩ" behaviour
+  /// (Task #13): if the account already has a saved location in
+  /// Firebase, show it and never re-ask — only fall back to whatever was
+  /// last cached on this device if Firebase has nothing.
+  void _applyRemoteLocation(Map? loc) {
+    final cityName = loc?['cityName'] as String?;
+    if (cityName != null && cityName.isNotEmpty) {
+      locationName = cityName;
+      _locationSaved = true;
+      StorageService.setString('ewn_location_saved', '1');
+      StorageService.setString('ewn_location_name', cityName);
+    } else {
+      _locationSaved = StorageService.getString('ewn_location_saved') == '1';
+      locationName = StorageService.getString('ewn_location_name');
+    }
+  }
+
+  /// Fire-and-forget: fetches the account's Firebase record on a silent
+  /// session restore (app cold start with an already-logged-in session)
+  /// and merges in cart/likes/location, then notifies listeners so the
+  /// UI picks up anything that changed on another device. Non-fatal if
+  /// this fails (offline, etc.) — the locally-cached values already
+  /// loaded in bootstrap() stand in the meantime.
+  Future<void> _syncFromRemoteOnRestore(String phone) async {
+    try {
+      final data = await _fb.fetchUser(phone);
+      if (data == null) return;
+      _mergeRemoteCart(data['cart']);
+      _mergeRemoteLikes(data['likes']);
+      await StorageService.saveCart(cart);
+      await StorageService.saveLikes(likes);
+      _applyRemoteLocation(data['location'] as Map?);
+      notifyListeners();
+    } catch (_) {
+      // Offline or transient — keep the locally-cached values as-is.
+    }
   }
 
   Future<void> _loadReferralInfo(String phone) async {

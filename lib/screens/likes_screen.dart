@@ -46,7 +46,7 @@ class LikesScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.56,
+                childAspectRatio: 0.66,
               ),
               itemCount: liked.length,
               itemBuilder: (context, i) {

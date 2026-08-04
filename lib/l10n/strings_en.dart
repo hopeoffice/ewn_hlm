@@ -79,6 +79,7 @@ const Map<String, String> stringsEn = {
   'login_btn_pin': 'Login',
   'forgot_pin': 'Forgot Password?',
   'register_title': 'Create Account',
+  'register_sub': "You're signing in for the first time, so let's create an account",
   'register_btn': 'Register',
   'full_name': 'Full Name',
   'email_address': 'Email',

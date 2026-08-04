@@ -89,13 +89,19 @@ class ProductCard extends StatelessWidget {
                 ],
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                // BUGFIX: this was Expanded + MainAxisAlignment.spaceBetween,
+                // which stretched the gaps between name -> description and
+                // description -> price to fill whatever leftover vertical
+                // space the grid cell had, making cards look unnecessarily
+                // tall with huge empty gaps. Size the text block to its own
+                // content instead and let fixed SizedBox gaps (below)
+                // control spacing.
+                mainAxisSize: MainAxisSize.min,
+                children: [
                     Text(
                       product.displayName(app.lang),
                       maxLines: 1,
@@ -137,7 +143,6 @@ class ProductCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
           ],
         ),
       ),

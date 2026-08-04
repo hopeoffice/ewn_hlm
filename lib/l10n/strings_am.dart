@@ -84,6 +84,7 @@ const Map<String, String> stringsAm = {
   'login_btn_pin': 'ግባ',
   'forgot_pin': 'ፓስዎርድ ረሳሁ?',
   'register_title': 'አዲስ መለያ ይክፈቱ',
+  'register_sub': 'ለመጀመሪያ ጊዜ እየገቡ ስለሆነ መለያ ይፍጠሩ',
   'register_btn': 'ይመዝገቡ',
   'full_name': 'ሙሉ ስም',
   'email_address': 'ኢሜል',

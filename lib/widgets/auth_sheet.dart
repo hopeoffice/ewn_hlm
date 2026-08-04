@@ -6,6 +6,8 @@ import '../services/wallet_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'offline_overlay.dart';
+import 'password_field.dart';
+import 'lang_switcher.dart';
 
 /// Ported from the "እንኳን ደህና መጡ" modal group in index.html — a real
 /// multi-step flow, NOT a single form with a login/register toggle:
@@ -77,7 +79,10 @@ class _AuthSheetState extends State<_AuthSheet> {
   // showed the error text once while leaving the button tappable again
   // immediately, letting the user keep hammering resend during a block.
   bool _resendBlocked = false;
-  bool _privacyConsent = false;
+  // BUGFIX: ticking the privacy-policy box is no longer a mandatory gate
+  // for registering, so it now defaults to already-agreed (true) instead
+  // of false — see _submitRegisterStart, which no longer blocks on this.
+  bool _privacyConsent = true;
 
   @override
   void dispose() {
@@ -239,10 +244,10 @@ class _AuthSheetState extends State<_AuthSheet> {
       setState(() => _error = S.t('pin_mismatch', _lang));
       return;
     }
-    if (!_privacyConsent) {
-      setState(() => _error = S.t('privacy_consent_required', _lang));
-      return;
-    }
+    // BUGFIX: ticking the privacy-policy checkbox used to be required to
+    // register (blocked here with 'privacy_consent_required'). It's no
+    // longer mandatory, so registration proceeds regardless of
+    // _privacyConsent's value.
     if (!await requireOnlineOrWarn(context, _lang)) return;
 
     setState(() {
@@ -426,6 +431,7 @@ class _AuthSheetState extends State<_AuthSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -442,6 +448,18 @@ class _AuthSheetState extends State<_AuthSheet> {
             }
           },
         ),
+        actions: [
+          // Language selector on the phone-number entry step, so it can
+          // be switched right where login/register starts instead of
+          // only from the Profile menu.
+          if (step == _AuthStep.phone)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: LangSwitcher(currentLang: app.lang, onChanged: (l) => app.setLanguage(l)),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -453,7 +471,7 @@ class _AuthSheetState extends State<_AuthSheet> {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: _buildStep(context.watch<AppState>().lang),
+            children: _buildStep(app.lang),
           ),
         ),
       ),
@@ -478,12 +496,36 @@ class _AuthSheetState extends State<_AuthSheet> {
   }
 
   List<Widget> _phoneStep(String lang) => [
-        Text(S.t('login_title', lang), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
+        // BUGFIX: this step used to show only the generic "login_title"
+        // ("Welcome") text. The dedicated auth_welcome_brand /
+        // auth_phone_sub strings already existed in l10n but were never
+        // wired up here. Add a profile icon + the full welcome copy +
+        // subtitle, matching the other auth steps.
+        Center(
+          child: CircleAvatar(
+            radius: 28,
+            backgroundColor: AppTheme.tagBg(context),
+            child: Icon(Icons.person, color: AppTheme.brand, size: 30),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(S.t('auth_welcome_brand', lang),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        Text(S.t('auth_phone_sub', lang),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppTheme.textMuted(context))),
+        const SizedBox(height: 20),
         TextField(
           controller: _phoneCtrl,
           keyboardType: TextInputType.phone,
-          decoration: InputDecoration(labelText: S.t('phone_number', lang), border: const OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: S.t('phone_number', lang),
+              // Show the label above the box at all times instead of only
+              // as a placeholder that disappears once typing starts.
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              border: const OutlineInputBorder()),
         ),
         if (_error != null) _errorLine(),
         const SizedBox(height: 12),
@@ -495,13 +537,7 @@ class _AuthSheetState extends State<_AuthSheet> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         Text(S.t('login_sub_pin', lang), style: TextStyle(color: AppTheme.textMuted(context))),
         const SizedBox(height: 16),
-        TextField(
-          controller: _loginPasswordCtrl,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          obscureText: true,
-          decoration: InputDecoration(labelText: S.t('pin_code', lang), border: const OutlineInputBorder()),
-        ),
+        PasswordField(controller: _loginPasswordCtrl, labelText: S.t('pin_code', lang)),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(onPressed: _goToForgotPin, child: Text(S.t('forgot_pin', lang))),
@@ -521,27 +557,27 @@ class _AuthSheetState extends State<_AuthSheet> {
           decoration: InputDecoration(labelText: S.t('email_address', lang), border: const OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: _migratePasswordCtrl,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          obscureText: true,
-          decoration: InputDecoration(labelText: S.t('pin_code', lang), border: const OutlineInputBorder()),
-        ),
+        PasswordField(controller: _migratePasswordCtrl, labelText: S.t('pin_code', lang)),
         const SizedBox(height: 12),
-        TextField(
-          controller: _migratePassword2Ctrl,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          obscureText: true,
-          decoration: InputDecoration(labelText: S.t('pin_confirm', lang), border: const OutlineInputBorder()),
-        ),
+        PasswordField(controller: _migratePassword2Ctrl, labelText: S.t('pin_confirm', lang)),
         if (_error != null) _errorLine(),
         _submitButton(_loading ? null : _submitMigrateStart, S.t('continue_btn', lang)),
       ];
 
   List<Widget> _registerStep(String lang) => [
-        Text(S.t('register_title', lang), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Center(
+          child: CircleAvatar(
+            radius: 28,
+            backgroundColor: AppTheme.tagBg(context),
+            child: Icon(Icons.person, color: AppTheme.brand, size: 30),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(S.t('register_title', lang),
+            textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        Text(S.t('register_sub', lang),
+            textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textMuted(context))),
         const SizedBox(height: 16),
         TextField(
           controller: _nameCtrl,
@@ -560,26 +596,16 @@ class _AuthSheetState extends State<_AuthSheet> {
               border: const OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
-        TextField(
+        PasswordField(
           controller: _regPasswordCtrl,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          obscureText: true,
-          decoration: InputDecoration(
-              labelText: S.t('pin_code', lang),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              border: const OutlineInputBorder()),
+          labelText: S.t('pin_code', lang),
+          floatingLabelBehavior: FloatingLabelBehavior.always,
         ),
         const SizedBox(height: 12),
-        TextField(
+        PasswordField(
           controller: _regPassword2Ctrl,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          obscureText: true,
-          decoration: InputDecoration(
-              labelText: S.t('pin_confirm', lang),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              border: const OutlineInputBorder()),
+          labelText: S.t('pin_confirm', lang),
+          floatingLabelBehavior: FloatingLabelBehavior.always,
         ),
         const SizedBox(height: 12),
         TextField(
@@ -598,10 +624,26 @@ class _AuthSheetState extends State<_AuthSheet> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Checkbox(
-                  value: _privacyConsent,
-                  onChanged: (v) => setState(() => _privacyConsent = v ?? false),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                // BUGFIX: ticking this box is optional now (not required to
+                // register), so it defaults to checked. Kept as the same
+                // square checkbox shape/size, but the indicator is a green
+                // dot instead of a checkmark tick.
+                Container(
+                  width: 18,
+                  height: 18,
+                  margin: const EdgeInsets.only(top: 2),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.brand, width: 1.5),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  alignment: Alignment.center,
+                  child: _privacyConsent
+                      ? Container(
+                          width: 9,
+                          height: 9,
+                          decoration: const BoxDecoration(color: AppTheme.brand, shape: BoxShape.circle),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 4),
                 Expanded(
@@ -731,13 +773,7 @@ class _AuthSheetState extends State<_AuthSheet> {
           decoration: InputDecoration(labelText: S.t('enter_code_title', lang), border: const OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: _resetPasswordCtrl,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          obscureText: true,
-          decoration: InputDecoration(labelText: S.t('new_pin', lang), border: const OutlineInputBorder()),
-        ),
+        PasswordField(controller: _resetPasswordCtrl, labelText: S.t('new_pin', lang)),
       ],
       if (_error != null) _errorLine(),
       const SizedBox(height: 8),
