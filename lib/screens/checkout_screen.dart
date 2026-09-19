@@ -374,7 +374,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
           // ---- Coin redemption box (renderCoinRedemptionBox) ----
           const SizedBox(height: 14),
-          if (app.isAuthenticated && !eligibility.eligible && eligibility.reason == 'balance_too_low')
+          if (app.isAuthenticated && !app.isWalletActivated)
+            _coinNote(context, lang == 'am'
+                ? '🪙 ኮይን ለመጠቀም መጀመሪያ ዋሌትዎን ማግበር ያስፈልጋል (ፕሮፋይል → የኔ ዋሌት)።'
+                : '🪙 Activate your wallet first to use coins (Profile → My Wallet).')
+          else if (app.isAuthenticated && !eligibility.eligible && eligibility.reason == 'balance_too_low')
             _coinNote(context, lang == 'am'
                 ? 'coin መጠቀም የሚቻለው የ coin ቀሪ ሂሳብዎ ከ${S.formatPrice(WalletService.minRedeemEtb, lang)} በላይ ዋጋ ሲኖረው ብቻ ነው። (የእርስዎ ቀሪ፦ ${S.formatNumber(app.coins)} coin ≈ ${S.formatPrice(WalletService.coinsToEtb(app.coins), lang)})'
                 : "Coins can only be used once your coin balance is worth more than ${S.formatPrice(WalletService.minRedeemEtb, lang)}. (Your balance: ${S.formatNumber(app.coins)} coins ≈ ${S.formatPrice(WalletService.coinsToEtb(app.coins), lang)})")

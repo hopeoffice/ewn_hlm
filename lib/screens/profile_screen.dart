@@ -128,8 +128,8 @@ class ProfileScreen extends StatelessWidget {
                   iconAsset: 'assets/icons/icon_wallet.png',
                   title: S.t('my_account', lang),
                   sub: app.isAuthenticated ? '${app.coins} ${S.t('my_account_sub', lang)}' : S.t('my_account_sub', lang),
-                  onTap: () => _requireAuth(context, app, () =>
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WalletScreen()))),
+                  onTap: () => _requireAuth(context, app, () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => app.isWalletActivated ? const WalletScreen() : const EditProfileScreen()))),
                 ),
                 _MenuItem(
                   emoji: '👤',

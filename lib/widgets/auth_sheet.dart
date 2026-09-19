@@ -36,7 +36,7 @@ Future<void> showAuthSheet(BuildContext context) {
   );
 }
 
-enum _AuthStep { phone, login, migrate, register, verify, forgot }
+enum _AuthStep { phone, login, loginBasic, migrate, register, verify, forgot }
 
 final RegExp _emailRe = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 final RegExp _passwordRe = RegExp(r'^\d{4}$');
@@ -52,13 +52,11 @@ class _AuthSheetState extends State<_AuthSheet> {
 
   final _phoneCtrl = TextEditingController();
   final _loginPasswordCtrl = TextEditingController();
+  final _basicLoginNameCtrl = TextEditingController(); // phone+name login (basic tier)
   final _migrateEmailCtrl = TextEditingController();
   final _migratePasswordCtrl = TextEditingController();
   final _migratePassword2Ctrl = TextEditingController();
   final _nameCtrl = TextEditingController();
-  final _regEmailCtrl = TextEditingController();
-  final _regPasswordCtrl = TextEditingController();
-  final _regPassword2Ctrl = TextEditingController();
   final _refCtrl = TextEditingController();
   final _verifyCodeCtrl = TextEditingController();
   final _forgotEmailCtrl = TextEditingController();
@@ -66,7 +64,6 @@ class _AuthSheetState extends State<_AuthSheet> {
   final _resetPasswordCtrl = TextEditingController();
 
   Map<String, dynamic>? _lookedUpUser; // set once the phone step resolves
-  String _verifyPurpose = 'register'; // 'register' | 'migrate'
   String? _error;
   bool _loading = false;
   bool _forgotSent = false;
@@ -88,13 +85,11 @@ class _AuthSheetState extends State<_AuthSheet> {
   void dispose() {
     _phoneCtrl.dispose();
     _loginPasswordCtrl.dispose();
+    _basicLoginNameCtrl.dispose();
     _migrateEmailCtrl.dispose();
     _migratePasswordCtrl.dispose();
     _migratePassword2Ctrl.dispose();
     _nameCtrl.dispose();
-    _regEmailCtrl.dispose();
-    _regPasswordCtrl.dispose();
-    _regPassword2Ctrl.dispose();
     _refCtrl.dispose();
     _verifyCodeCtrl.dispose();
     _forgotEmailCtrl.dispose();
@@ -138,10 +133,44 @@ class _AuthSheetState extends State<_AuthSheet> {
       } else if (data['emailVerified'] == true) {
         _loginPasswordCtrl.clear();
         step = _AuthStep.login;
+      } else if (data['tier'] == 'basic') {
+        _basicLoginNameCtrl.clear();
+        step = _AuthStep.loginBasic;
       } else {
         step = _AuthStep.migrate;
       }
     });
+  }
+
+  // ---------------- Step 2a2: basic-tier login (phone + name) ----------------
+
+  Future<void> _submitLoginBasic() async {
+    final name = _basicLoginNameCtrl.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = S.t('fill_all_fields', _lang));
+      return;
+    }
+    if (!await requireOnlineOrWarn(context, _lang)) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final err = await context.read<AppState>().loginBasic(_phoneCtrl.text.trim(), name);
+    setState(() => _loading = false);
+    if (err == null) {
+      if (mounted) Navigator.pop(context);
+    } else if (err == 'migration_required') {
+      // Server-side says this is actually a legacy PIN account, not
+      // basic-tier (shouldn't normally happen since checkPhone already
+      // routed correctly, but stay consistent if the record changed
+      // between the lookup and this submit).
+      setState(() {
+        _error = null;
+        step = _AuthStep.migrate;
+      });
+    } else {
+      setState(() => _error = _errorText(err));
+    }
   }
 
   // ---------------- Step 2a: login ----------------
@@ -211,7 +240,6 @@ class _AuthSheetState extends State<_AuthSheet> {
     final err = await context.read<AppState>().startMigrate(phone: _phoneCtrl.text.trim(), email: email, password: password);
     setState(() => _loading = false);
     if (err == null) {
-      _verifyPurpose = 'migrate';
       _verifyCodeCtrl.clear();
       _startResendTimer();
       setState(() => step = _AuthStep.verify);
@@ -224,49 +252,25 @@ class _AuthSheetState extends State<_AuthSheet> {
 
   Future<void> _submitRegisterStart() async {
     final name = _nameCtrl.text.trim();
-    final email = _regEmailCtrl.text.trim();
-    final password = _regPasswordCtrl.text.trim();
-    final password2 = _regPassword2Ctrl.text.trim();
 
-    if (name.isEmpty) {
-      setState(() => _error = S.t('fill_all_fields', _lang));
+    if (name.length < 2) {
+      setState(() => _error = S.t('invalid_name', _lang));
       return;
     }
-    if (!_emailRe.hasMatch(email)) {
-      setState(() => _error = S.t('invalid_email', _lang));
-      return;
-    }
-    if (!_passwordRe.hasMatch(password)) {
-      setState(() => _error = S.t('invalid_password', _lang));
-      return;
-    }
-    if (password != password2) {
-      setState(() => _error = S.t('pin_mismatch', _lang));
-      return;
-    }
-    // BUGFIX: ticking the privacy-policy checkbox used to be required to
-    // register (blocked here with 'privacy_consent_required'). It's no
-    // longer mandatory, so registration proceeds regardless of
-    // _privacyConsent's value.
     if (!await requireOnlineOrWarn(context, _lang)) return;
 
     setState(() {
       _loading = true;
       _error = null;
     });
-    final err = await context.read<AppState>().startRegister(
+    final err = await context.read<AppState>().registerBasic(
           name: name,
           phone: _phoneCtrl.text.trim(),
-          email: email,
-          password: password,
           incomingReferralCode: _refCtrl.text.trim().isEmpty ? null : _refCtrl.text.trim(),
         );
     setState(() => _loading = false);
     if (err == null) {
-      _verifyPurpose = 'register';
-      _verifyCodeCtrl.clear();
-      _startResendTimer();
-      setState(() => step = _AuthStep.verify);
+      if (mounted) Navigator.pop(context);
     } else {
       setState(() => _error = _errorText(err));
     }
@@ -286,7 +290,7 @@ class _AuthSheetState extends State<_AuthSheet> {
       _error = null;
     });
     final app = context.read<AppState>();
-    final err = _verifyPurpose == 'register' ? await app.completeRegister(code) : await app.completeMigrate(code);
+    final err = await app.completeMigrate(code);
     setState(() => _loading = false);
     if (err == null) {
       if (mounted) Navigator.pop(context);
@@ -299,7 +303,7 @@ class _AuthSheetState extends State<_AuthSheet> {
     if (_resendSeconds > 0 || _resendBlocked) return;
     if (!await requireOnlineOrWarn(context, _lang)) return;
     final app = context.read<AppState>();
-    final err = _verifyPurpose == 'register' ? await app.resendRegisterCode() : await app.resendMigrateCode();
+    final err = await app.resendMigrateCode();
     if (err == null) {
       _startResendTimer();
       if (mounted) {
@@ -408,7 +412,14 @@ class _AuthSheetState extends State<_AuthSheet> {
       case 'locked_try_later':
         return S.t('too_many_attempts', lang);
       case 'already_registered':
+      case 'phone_taken':
         return S.t('already_registered', lang);
+      case 'invalid_name':
+        return S.t('invalid_name', lang);
+      case 'wrong_name':
+        return S.t('wrong_name', lang);
+      case 'rate_limited':
+        return S.t('too_many_attempts', lang);
       case 'invalid_email':
         return S.t('invalid_email', lang);
       case 'email_mismatch':
@@ -484,6 +495,8 @@ class _AuthSheetState extends State<_AuthSheet> {
         return _phoneStep(lang);
       case _AuthStep.login:
         return _loginStep(lang);
+      case _AuthStep.loginBasic:
+        return _loginBasicStep(lang);
       case _AuthStep.migrate:
         return _migrateStep(lang);
       case _AuthStep.register:
@@ -546,6 +559,19 @@ class _AuthSheetState extends State<_AuthSheet> {
         _submitButton(_loading ? null : _submitLogin, S.t('login_btn_pin', lang)),
       ];
 
+  List<Widget> _loginBasicStep(String lang) => [
+        Text('${S.t('login_title', lang)} ${_lookedUpUser?['name'] ?? ''}',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(S.t('login_sub_basic', lang), style: TextStyle(color: AppTheme.textMuted(context))),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _basicLoginNameCtrl,
+          decoration: InputDecoration(labelText: S.t('full_name', lang), border: const OutlineInputBorder()),
+        ),
+        if (_error != null) _errorLine(),
+        _submitButton(_loading ? null : _submitLoginBasic, S.t('login_btn_pin', lang)),
+      ];
+
   List<Widget> _migrateStep(String lang) => [
         Text(S.t('migrate_title', lang), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
@@ -585,27 +611,6 @@ class _AuthSheetState extends State<_AuthSheet> {
               labelText: S.t('full_name', lang),
               floatingLabelBehavior: FloatingLabelBehavior.always,
               border: const OutlineInputBorder()),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _regEmailCtrl,
-          keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-              labelText: S.t('email_address', lang),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              border: const OutlineInputBorder()),
-        ),
-        const SizedBox(height: 12),
-        PasswordField(
-          controller: _regPasswordCtrl,
-          labelText: S.t('pin_code', lang),
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-        ),
-        const SizedBox(height: 12),
-        PasswordField(
-          controller: _regPassword2Ctrl,
-          labelText: S.t('pin_confirm', lang),
-          floatingLabelBehavior: FloatingLabelBehavior.always,
         ),
         const SizedBox(height: 12),
         TextField(
@@ -673,8 +678,7 @@ class _AuthSheetState extends State<_AuthSheet> {
         Text(S.t('enter_code_title', lang), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
         Text(
-          (lang == 'am' ? 'ኮድ ወደ ' : 'A code was sent to ') +
-              (_verifyPurpose == 'register' ? _regEmailCtrl.text.trim() : _migrateEmailCtrl.text.trim()),
+          (lang == 'am' ? 'ኮድ ወደ ' : 'A code was sent to ') + _migrateEmailCtrl.text.trim(),
           style: TextStyle(color: AppTheme.textMuted(context)),
         ),
         const SizedBox(height: 16),

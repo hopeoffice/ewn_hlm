@@ -68,6 +68,12 @@ class AppState extends ChangeNotifier {
 
   bool get isAuthenticated => user != null;
 
+  /// True once the account has email+password set (tier == 'wallet') —
+  /// gates every coin/wallet feature. A basic-tier (phone+name only)
+  /// account must complete wallet activation (adds email+password via
+  /// the existing migrate flow) before this becomes true.
+  bool get isWalletActivated => user != null && user!.tier != 'basic';
+
   // ---------------- Startup ----------------
 
   /// Called once from main.dart. Mirrors:
@@ -148,13 +154,25 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
+  /// Basic-tier login — phone + name, no password. Returns null on
+  /// success, or an error code: 'user_not_found', 'wallet_account'
+  /// (caller should route to the normal password login instead),
+  /// 'migration_required' (legacy PIN account — route to migrate),
+  /// 'account_blocked', 'locked_try_later', 'wrong_name', 'connection_error'.
+  Future<String?> loginBasic(String phone, String name) async {
+    final result = await _fb.loginBasic(phone: phone, name: name);
+    if (!result.ok) return result.error ?? 'connection_error';
+    await _completeLogin(phone, result.userData!);
+    return null;
+  }
+
   /// Shared session-setup — was inlined in login() alone before; now also
   /// used by completeRegister()/completeMigrate()/completeForgotPassword()
   /// since all four now end with the same Worker-returned `userData`
   /// getting logged straight in (matching loginWithUserData() in
   /// main-config.js, which every one of those flows calls at the end).
   Future<void> _completeLogin(String phone, Map<String, dynamic> data) async {
-    user = UserModel(name: data['name'] as String, phone: phone);
+    user = UserModel(name: data['name'] as String, phone: phone, tier: (data['tier'] as String?) ?? 'wallet');
     await StorageService.saveSession(user!);
 
     // Merge remote cart/orders/likes with local (same merge-by-id logic
@@ -409,7 +427,22 @@ class AppState extends ChangeNotifier {
     if (!isAuthenticated) return (null, 'not_authenticated');
     final (name, err) = await _fb.updateName(phone: user!.phone, password: password, newName: newName);
     if (err == null && name != null) {
-      user = UserModel(name: name, phone: user!.phone);
+      user = UserModel(name: name, phone: user!.phone, tier: user!.tier);
+      await StorageService.saveSession(user!);
+      notifyListeners();
+    }
+    return (name, err);
+  }
+
+  /// Basic-tier equivalent of updateName() — re-enters the current name
+  /// (their only credential) instead of a password. Errors:
+  /// 'invalid_name', 'user_not_found', 'not_basic_account',
+  /// 'locked_try_later', 'wrong_name', 'cooldown_active'.
+  Future<(String?, String?)> updateNameBasic({required String currentName, required String newName}) async {
+    if (!isAuthenticated) return (null, 'not_authenticated');
+    final (name, err) = await _fb.updateNameBasic(phone: user!.phone, currentName: currentName, newName: newName);
+    if (err == null && name != null) {
+      user = UserModel(name: name, phone: user!.phone, tier: user!.tier);
       await StorageService.saveSession(user!);
       notifyListeners();
     }
@@ -466,6 +499,49 @@ class AppState extends ChangeNotifier {
   // the user to retype everything.
   _PendingRegister? _pendingRegister;
   _PendingMigrate? _pendingMigrate;
+
+  /// Basic (phone+name only) registration — ports the same post-create
+  /// steps as completeRegister() (own referral index, signup bonus,
+  /// incoming-referral crediting), but the account itself is created
+  /// directly in one call since there's no email to verify. Returns null
+  /// on success, or an error code: 'invalid_phone', 'invalid_name',
+  /// 'phone_taken', 'rate_limited', 'connection_error'.
+  Future<String?> registerBasic({
+    required String name,
+    required String phone,
+    String? incomingReferralCode,
+  }) async {
+    final myCode = FirebaseService.generateReferralCode();
+    final result = await _fb.registerBasic(phone: phone, name: name, referralCode: myCode);
+    if (!result.ok) return result.error ?? 'connection_error';
+    final userData = result.userData!;
+
+    try {
+      await _fb.setReferralIndex(myCode, phone);
+
+      final newCoins = await _fb.awardSignupBonus(phone);
+      if (newCoins != null) userData['coins'] = newCoins;
+
+      final incoming = incomingReferralCode?.trim().toUpperCase();
+      if (incoming != null && incoming.length >= 6 && incoming != myCode) {
+        final ownerPhone = await _fb.resolveReferralOwner(incoming);
+        if (ownerPhone != null) {
+          await _fb.trackReferralUse(incoming, phone);
+          final newCount = await _fb.incrementReferralCount(ownerPhone);
+          final withinCap = newCount == null || newCount <= WalletService.maxReferralCountForCoins;
+          if (withinCap) {
+            await _fb.awardReferralCoins(incoming, ownerPhone, phone);
+          }
+        }
+      }
+    } catch (_) {
+      // Non-fatal — same as completeRegister(): referral crediting
+      // failing shouldn't block the new account from logging in.
+    }
+
+    await _completeLogin(phone, userData);
+    return null;
+  }
 
   /// Step 1 of registration — ported from submitAuthRegisterStart() in
   /// main-config.js. Sends the 5-digit email verification code; the
