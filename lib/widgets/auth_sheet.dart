@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../l10n/strings.dart';
-import '../services/wallet_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'offline_overlay.dart';
@@ -36,7 +34,7 @@ Future<void> showAuthSheet(BuildContext context) {
   );
 }
 
-enum _AuthStep { phone, login, loginBasic, migrate, register, verify, forgot }
+enum _AuthStep { phone, login, migrate, verify, forgot }
 
 final RegExp _emailRe = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 final RegExp _passwordRe = RegExp(r'^\d{4}$');
@@ -52,12 +50,9 @@ class _AuthSheetState extends State<_AuthSheet> {
 
   final _phoneCtrl = TextEditingController();
   final _loginPasswordCtrl = TextEditingController();
-  final _basicLoginNameCtrl = TextEditingController(); // phone+name login (basic tier)
   final _migrateEmailCtrl = TextEditingController();
   final _migratePasswordCtrl = TextEditingController();
   final _migratePassword2Ctrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
-  final _refCtrl = TextEditingController();
   final _verifyCodeCtrl = TextEditingController();
   final _forgotEmailCtrl = TextEditingController();
   final _resetCodeCtrl = TextEditingController();
@@ -76,21 +71,14 @@ class _AuthSheetState extends State<_AuthSheet> {
   // showed the error text once while leaving the button tappable again
   // immediately, letting the user keep hammering resend during a block.
   bool _resendBlocked = false;
-  // BUGFIX: ticking the privacy-policy box is no longer a mandatory gate
-  // for registering, so it now defaults to already-agreed (true) instead
-  // of false — see _submitRegisterStart, which no longer blocks on this.
-  bool _privacyConsent = true;
 
   @override
   void dispose() {
     _phoneCtrl.dispose();
     _loginPasswordCtrl.dispose();
-    _basicLoginNameCtrl.dispose();
     _migrateEmailCtrl.dispose();
     _migratePasswordCtrl.dispose();
     _migratePassword2Ctrl.dispose();
-    _nameCtrl.dispose();
-    _refCtrl.dispose();
     _verifyCodeCtrl.dispose();
     _forgotEmailCtrl.dispose();
     _resetCodeCtrl.dispose();
@@ -124,53 +112,68 @@ class _AuthSheetState extends State<_AuthSheet> {
       _loading = true;
       _error = null;
     });
-    final data = await context.read<AppState>().checkPhone(phone);
+    final app = context.read<AppState>();
+    final data = await app.checkPhone(phone);
+
+    if (data == null) {
+      // Brand-new phone — no separate "register" screen, and no server
+      // write yet either: the account is created lazily the first time
+      // it's actually needed (placing an order, activating the
+      // wallet), so a typo'd number that nobody ever commits to never
+      // touches the database.
+      await app.enterBasicLocal(phone);
+      setState(() => _loading = false);
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+
+    if (data['blocked'] == true) {
+      setState(() {
+        _loading = false;
+        _error = S.t('account_blocked', _lang);
+      });
+      return;
+    }
+
+    if (data['emailVerified'] == true) {
+      _loginPasswordCtrl.clear();
+      setState(() {
+        _loading = false;
+        _lookedUpUser = data;
+        step = _AuthStep.login;
+      });
+      return;
+    }
+
+    if (data['tier'] == 'basic') {
+      // Existing basic-tier phone — phone number alone is enough, log
+      // straight in with no further prompt.
+      final err = await app.loginBasic(phone);
+      setState(() => _loading = false);
+      if (err == null) {
+        if (mounted) Navigator.pop(context);
+      } else if (err == 'migration_required') {
+        // Server says this is actually a legacy PIN account (shouldn't
+        // normally happen since the lookup above already routed
+        // correctly, but stay consistent if the record changed between
+        // the lookup and this call).
+        setState(() {
+          _error = null;
+          _lookedUpUser = data;
+          step = _AuthStep.migrate;
+        });
+      } else {
+        setState(() => _error = _errorText(err));
+      }
+      return;
+    }
+
+    // Legacy PIN-only account.
     setState(() {
       _loading = false;
       _lookedUpUser = data;
-      if (data == null) {
-        step = _AuthStep.register;
-      } else if (data['emailVerified'] == true) {
-        _loginPasswordCtrl.clear();
-        step = _AuthStep.login;
-      } else if (data['tier'] == 'basic') {
-        _basicLoginNameCtrl.clear();
-        step = _AuthStep.loginBasic;
-      } else {
-        step = _AuthStep.migrate;
-      }
+      step = _AuthStep.migrate;
     });
-  }
-
-  // ---------------- Step 2a2: basic-tier login (phone + name) ----------------
-
-  Future<void> _submitLoginBasic() async {
-    final name = _basicLoginNameCtrl.text.trim();
-    if (name.isEmpty) {
-      setState(() => _error = S.t('fill_all_fields', _lang));
-      return;
-    }
-    if (!await requireOnlineOrWarn(context, _lang)) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final err = await context.read<AppState>().loginBasic(_phoneCtrl.text.trim(), name);
-    setState(() => _loading = false);
-    if (err == null) {
-      if (mounted) Navigator.pop(context);
-    } else if (err == 'migration_required') {
-      // Server-side says this is actually a legacy PIN account, not
-      // basic-tier (shouldn't normally happen since checkPhone already
-      // routed correctly, but stay consistent if the record changed
-      // between the lookup and this submit).
-      setState(() {
-        _error = null;
-        step = _AuthStep.migrate;
-      });
-    } else {
-      setState(() => _error = _errorText(err));
-    }
   }
 
   // ---------------- Step 2a: login ----------------
@@ -243,34 +246,6 @@ class _AuthSheetState extends State<_AuthSheet> {
       _verifyCodeCtrl.clear();
       _startResendTimer();
       setState(() => step = _AuthStep.verify);
-    } else {
-      setState(() => _error = _errorText(err));
-    }
-  }
-
-  // ---------------- Step 2c: register ----------------
-
-  Future<void> _submitRegisterStart() async {
-    final name = _nameCtrl.text.trim();
-
-    if (name.length < 2) {
-      setState(() => _error = S.t('invalid_name', _lang));
-      return;
-    }
-    if (!await requireOnlineOrWarn(context, _lang)) return;
-
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final err = await context.read<AppState>().registerBasic(
-          name: name,
-          phone: _phoneCtrl.text.trim(),
-          incomingReferralCode: _refCtrl.text.trim().isEmpty ? null : _refCtrl.text.trim(),
-        );
-    setState(() => _loading = false);
-    if (err == null) {
-      if (mounted) Navigator.pop(context);
     } else {
       setState(() => _error = _errorText(err));
     }
@@ -495,12 +470,8 @@ class _AuthSheetState extends State<_AuthSheet> {
         return _phoneStep(lang);
       case _AuthStep.login:
         return _loginStep(lang);
-      case _AuthStep.loginBasic:
-        return _loginBasicStep(lang);
       case _AuthStep.migrate:
         return _migrateStep(lang);
-      case _AuthStep.register:
-        return _registerStep(lang);
       case _AuthStep.verify:
         return _verifyStep(lang);
       case _AuthStep.forgot:
@@ -559,19 +530,6 @@ class _AuthSheetState extends State<_AuthSheet> {
         _submitButton(_loading ? null : _submitLogin, S.t('login_btn_pin', lang)),
       ];
 
-  List<Widget> _loginBasicStep(String lang) => [
-        Text('${S.t('login_title', lang)} ${_lookedUpUser?['name'] ?? ''}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(S.t('login_sub_basic', lang), style: TextStyle(color: AppTheme.textMuted(context))),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _basicLoginNameCtrl,
-          decoration: InputDecoration(labelText: S.t('full_name', lang), border: const OutlineInputBorder()),
-        ),
-        if (_error != null) _errorLine(),
-        _submitButton(_loading ? null : _submitLoginBasic, S.t('login_btn_pin', lang)),
-      ];
-
   List<Widget> _migrateStep(String lang) => [
         Text(S.t('migrate_title', lang), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
@@ -588,90 +546,6 @@ class _AuthSheetState extends State<_AuthSheet> {
         PasswordField(controller: _migratePassword2Ctrl, labelText: S.t('pin_confirm', lang)),
         if (_error != null) _errorLine(),
         _submitButton(_loading ? null : _submitMigrateStart, S.t('continue_btn', lang)),
-      ];
-
-  List<Widget> _registerStep(String lang) => [
-        Center(
-          child: CircleAvatar(
-            radius: 28,
-            backgroundColor: AppTheme.tagBg(context),
-            child: Icon(Icons.person, color: AppTheme.brand, size: 30),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Text(S.t('register_title', lang),
-            textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 6),
-        Text(S.t('register_sub', lang),
-            textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textMuted(context))),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _nameCtrl,
-          decoration: InputDecoration(
-              labelText: S.t('full_name', lang),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              border: const OutlineInputBorder()),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _refCtrl,
-          textCapitalization: TextCapitalization.characters,
-          decoration: InputDecoration(
-              labelText: S.t('promo_code_label', lang),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              border: const OutlineInputBorder()),
-        ),
-        const SizedBox(height: 12),
-        InkWell(
-          onTap: () => setState(() => _privacyConsent = !_privacyConsent),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // BUGFIX: ticking this box is optional now (not required to
-                // register), so it defaults to checked. Kept as the same
-                // square checkbox shape/size, but the indicator is a green
-                // dot instead of a checkmark tick.
-                Container(
-                  width: 18,
-                  height: 18,
-                  margin: const EdgeInsets.only(top: 2),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppTheme.brand, width: 1.5),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  alignment: Alignment.center,
-                  child: _privacyConsent
-                      ? Container(
-                          width: 9,
-                          height: 9,
-                          decoration: const BoxDecoration(color: AppTheme.brand, shape: BoxShape.circle),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Wrap(
-                    children: [
-                      Text(lang == 'am' ? 'የ' : 'I have read and agree to the ', style: const TextStyle(fontSize: 13)),
-                      GestureDetector(
-                        onTap: () => launchUrl(Uri.parse(WalletService.privacyPolicyUrl), mode: LaunchMode.externalApplication),
-                        child: Text(
-                          lang == 'am' ? 'ፕራይቬሲ ፖሊሲ' : 'Privacy Policy',
-                          style: const TextStyle(fontSize: 13, color: AppTheme.brand, fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
-                        ),
-                      ),
-                      Text(lang == 'am' ? 'ን አንብቤ ተስማምቻለሁ' : '', style: const TextStyle(fontSize: 13)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_error != null) _errorLine(),
-        _submitButton(_loading ? null : _submitRegisterStart, S.t('register_btn', lang)),
       ];
 
   List<Widget> _verifyStep(String lang) => [

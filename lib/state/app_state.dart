@@ -154,13 +154,13 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  /// Basic-tier login — phone + name, no password. Returns null on
-  /// success, or an error code: 'user_not_found', 'wallet_account'
-  /// (caller should route to the normal password login instead),
-  /// 'migration_required' (legacy PIN account — route to migrate),
-  /// 'account_blocked', 'locked_try_later', 'wrong_name', 'connection_error'.
-  Future<String?> loginBasic(String phone, String name) async {
-    final result = await _fb.loginBasic(phone: phone, name: name);
+  /// Basic-tier login — phone number alone (no credential to check at
+  /// this tier). Returns null on success, or an error code:
+  /// 'user_not_found', 'wallet_account' (caller should route to the
+  /// normal password login instead), 'migration_required' (legacy PIN
+  /// account — route to migrate), 'account_blocked', 'connection_error'.
+  Future<String?> loginBasic(String phone) async {
+    final result = await _fb.loginBasic(phone: phone);
     if (!result.ok) return result.error ?? 'connection_error';
     await _completeLogin(phone, result.userData!);
     return null;
@@ -172,7 +172,12 @@ class AppState extends ChangeNotifier {
   /// getting logged straight in (matching loginWithUserData() in
   /// main-config.js, which every one of those flows calls at the end).
   Future<void> _completeLogin(String phone, Map<String, dynamic> data) async {
-    user = UserModel(name: data['name'] as String, phone: phone, tier: (data['tier'] as String?) ?? 'wallet');
+    user = UserModel(
+      name: data['name'] as String,
+      phone: phone,
+      tier: (data['tier'] as String?) ?? 'wallet',
+      hasServerAccount: true, // reaching here always means a real users/{phone} record exists
+    );
     await StorageService.saveSession(user!);
 
     // Merge remote cart/orders/likes with local (same merge-by-id logic
@@ -197,21 +202,76 @@ class AppState extends ChangeNotifier {
     _fb.syncCartDebounced(phone, cart);
     _fb.syncLikes(phone, likes);
 
+    _applyRemoteLocation(data['location'] as Map?);
+    await _setupAccountServices(phone);
+    notifyListeners();
+  }
+
+  /// Local-only "login" for a brand-new phone number — no server call at
+  /// all. Ports Dani's lazy-account-creation request: a mistyped phone
+  /// number that nobody ever places an order or activates a wallet with
+  /// should never create a users/{phone} record. The real account only
+  /// gets created by _ensureBasicAccountExists(), called right before
+  /// the first action that actually needs one.
+  Future<void> enterBasicLocal(String phone) async {
+    user = UserModel(name: '', phone: phone, tier: 'basic', hasServerAccount: false);
+    await StorageService.saveSession(user!);
+    notifyListeners();
+  }
+
+  /// Device link, live coin/order/notification watchers, push
+  /// registration, and referral-code loading — everything _completeLogin
+  /// does besides the user/cart/orders/likes bookkeeping above it. Split
+  /// out so _ensureBasicAccountExists() can run the same setup the first
+  /// time a lazily-created account actually comes into existence.
+  Future<void> _setupAccountServices(String phone) async {
     final deviceId = StorageService.getOrCreateDeviceId();
     try {
       await _fb.linkDeviceToUser(phone, deviceId);
     } catch (_) {
       // Non-fatal — login should still succeed even if this write fails.
     }
-
-    _applyRemoteLocation(data['location'] as Map?);
-
     _watchCoins(phone);
     _watchOrders(phone);
-    PushService.registerForUser(phone); // Step 3 — fire-and-forget
-    _loadReferralInfo(phone);
+    PushService.registerForUser(phone); // fire-and-forget
+    if (user?.tier != 'basic') _loadReferralInfo(phone);
     _watchNotifications();
-    notifyListeners();
+  }
+
+  /// Lazily creates the users/{phone} record for a session that was
+  /// entered purely locally via enterBasicLocal() — called right before
+  /// the first action that actually needs a server account (placing an
+  /// order, activating the wallet). Idempotent and safe to call even if
+  /// an account already exists (a retry, a second device, etc.): in
+  /// that case it fetches and merges instead of assuming an empty
+  /// account, same as a normal login.
+  /// Returns true once a server account is confirmed to exist, false
+  /// only on a genuine connection failure — callers should abort with a
+  /// 'connection_error' in that case.
+  Future<bool> _ensureBasicAccountExists() async {
+    if (user == null) return false;
+    if (user!.hasServerAccount) return true;
+
+    final result = await _fb.registerBasic(phone: user!.phone);
+    if (result.ok) {
+      user = UserModel(name: user!.name, phone: user!.phone, tier: user!.tier, hasServerAccount: true);
+      await StorageService.saveSession(user!);
+      // First time this account exists server-side — push whatever was
+      // gathered locally up (cart, likes), same as a normal login does.
+      _fb.syncCartDebounced(user!.phone, cart);
+      _fb.syncLikes(user!.phone, likes);
+      await _setupAccountServices(user!.phone);
+      notifyListeners();
+      return true;
+    }
+    if (result.error == 'phone_taken') {
+      final data = await _fb.fetchUser(user!.phone);
+      if (data != null) {
+        await _completeLogin(user!.phone, data);
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Adds remote cart lines (users/{phone}/cart) that aren't already
@@ -468,7 +528,7 @@ class AppState extends ChangeNotifier {
     await StorageService.setString('ewn_location_saved', '1');
     await StorageService.setString('ewn_location_name', result.cityName);
     try {
-      await _fb.saveLocation(user!.phone, result.toMap());
+      if (user!.hasServerAccount) await _fb.saveLocation(user!.phone, result.toMap());
     } catch (_) {
       // Non-fatal — same as the web app's try/catch around the RTDB write.
     }
@@ -500,46 +560,15 @@ class AppState extends ChangeNotifier {
   _PendingRegister? _pendingRegister;
   _PendingMigrate? _pendingMigrate;
 
-  /// Basic (phone+name only) registration — ports the same post-create
-  /// steps as completeRegister() (own referral index, signup bonus,
-  /// incoming-referral crediting), but the account itself is created
-  /// directly in one call since there's no email to verify. Returns null
-  /// on success, or an error code: 'invalid_phone', 'invalid_name',
-  /// 'phone_taken', 'rate_limited', 'connection_error'.
-  Future<String?> registerBasic({
-    required String name,
-    required String phone,
-    String? incomingReferralCode,
-  }) async {
-    final myCode = FirebaseService.generateReferralCode();
-    final result = await _fb.registerBasic(phone: phone, name: name, referralCode: myCode);
+  /// Basic (phone-only) registration — creates a bare account with no
+  /// name yet. Name, promo code, signup bonus, and referral crediting
+  /// all happen together later, at wallet activation (see
+  /// completeMigrate()). Returns null on success, or an error code:
+  /// 'invalid_phone', 'phone_taken', 'rate_limited', 'connection_error'.
+  Future<String?> registerBasic({required String phone}) async {
+    final result = await _fb.registerBasic(phone: phone);
     if (!result.ok) return result.error ?? 'connection_error';
-    final userData = result.userData!;
-
-    try {
-      await _fb.setReferralIndex(myCode, phone);
-
-      final newCoins = await _fb.awardSignupBonus(phone);
-      if (newCoins != null) userData['coins'] = newCoins;
-
-      final incoming = incomingReferralCode?.trim().toUpperCase();
-      if (incoming != null && incoming.length >= 6 && incoming != myCode) {
-        final ownerPhone = await _fb.resolveReferralOwner(incoming);
-        if (ownerPhone != null) {
-          await _fb.trackReferralUse(incoming, phone);
-          final newCount = await _fb.incrementReferralCount(ownerPhone);
-          final withinCap = newCount == null || newCount <= WalletService.maxReferralCountForCoins;
-          if (withinCap) {
-            await _fb.awardReferralCoins(incoming, ownerPhone, phone);
-          }
-        }
-      }
-    } catch (_) {
-      // Non-fatal — same as completeRegister(): referral crediting
-      // failing shouldn't block the new account from logging in.
-    }
-
-    await _completeLogin(phone, userData);
+    await _completeLogin(phone, result.userData!);
     return null;
   }
 
@@ -642,12 +671,47 @@ class AppState extends ChangeNotifier {
   /// Step 1 of the legacy-account migration flow (add email + new
   /// password) — ports submitAuthMigrateStart() in main-config.js.
   /// Reached when login()/checkPhone() surfaces 'migration_required' for
-  /// an existing PIN-only account. Returns null on success (code sent),
-  /// or 'invalid_email' / 'invalid_password' / 'connection_error'.
-  Future<String?> startMigrate({required String phone, required String email, required String password}) async {
-    final result = await _fb.sendVerificationCode(phone: phone, purpose: 'migrate', email: email, password: password);
+  /// an existing PIN-only account.
+  ///
+  /// Doubles as wallet activation for a *basic*-tier account: pass
+  /// [name] (required — the account has none yet) and optionally
+  /// [incomingReferralCode]; a fresh referral code is generated for the
+  /// new wallet-tier account, and completeMigrate() will set the name,
+  /// award the signup bonus, and credit the incoming referral once the
+  /// email code is confirmed — mirroring what completeRegister() does
+  /// for a full register, just happening later.
+  ///
+  /// Returns null on success (code sent), or 'invalid_email' /
+  /// 'invalid_password' / 'invalid_name' / 'connection_error'.
+  Future<String?> startMigrate({
+    required String phone,
+    required String email,
+    required String password,
+    String? name,
+    String? incomingReferralCode,
+  }) async {
+    final isWalletActivation = name != null;
+    if (isWalletActivation && !await _ensureBasicAccountExists()) {
+      return 'connection_error';
+    }
+    final myReferralCode = isWalletActivation ? FirebaseService.generateReferralCode() : null;
+    final result = await _fb.sendVerificationCode(
+      phone: phone,
+      purpose: 'migrate',
+      email: email,
+      password: password,
+      name: name,
+      referralCode: myReferralCode,
+    );
     if (!result.ok) return result.error ?? 'connection_error';
-    _pendingMigrate = _PendingMigrate(phone: phone, email: email, password: password);
+    _pendingMigrate = _PendingMigrate(
+      phone: phone,
+      email: email,
+      password: password,
+      name: name,
+      myReferralCode: myReferralCode,
+      incomingReferralCode: incomingReferralCode,
+    );
     return null;
   }
 
@@ -656,20 +720,59 @@ class AppState extends ChangeNotifier {
   Future<String?> resendMigrateCode() async {
     final p = _pendingMigrate;
     if (p == null) return 'connection_error';
-    final result = await _fb.sendVerificationCode(phone: p.phone, purpose: 'migrate', email: p.email, password: p.password);
+    final result = await _fb.sendVerificationCode(
+      phone: p.phone,
+      purpose: 'migrate',
+      email: p.email,
+      password: p.password,
+      name: p.name,
+      referralCode: p.myReferralCode,
+    );
     return result.ok ? null : (result.error ?? 'connection_error');
   }
 
   /// Step 2 of migration — ports the migrate branch of submitVerifyCode()
-  /// in main-config.js: the Worker adds email/password to the existing
-  /// account and marks it `emailVerified`, then this logs straight in.
+  /// in main-config.js: the Worker adds email/password (and, for a
+  /// basic-tier account activating its wallet, name + referral code) to
+  /// the existing account and marks it `emailVerified`. For wallet
+  /// activation specifically, this also runs the same post-create steps
+  /// as completeRegister() — own referral index, signup bonus, incoming
+  /// referral crediting — since those never happened at the earlier bare
+  /// phone-only registration.
   Future<String?> completeMigrate(String code) async {
     final p = _pendingMigrate;
     if (p == null) return 'connection_error';
     final result = await _fb.verifyEmailCode(phone: p.phone, code: code, purpose: 'migrate');
     if (!result.ok) return result.error ?? 'connection_error';
+    final userData = result.userData!;
+
+    if (p.myReferralCode != null) {
+      try {
+        await _fb.setReferralIndex(p.myReferralCode!, p.phone);
+
+        final newCoins = await _fb.awardSignupBonus(p.phone);
+        if (newCoins != null) userData['coins'] = newCoins;
+
+        final incoming = p.incomingReferralCode?.trim().toUpperCase();
+        if (incoming != null && incoming.length >= 6 && incoming != p.myReferralCode) {
+          final ownerPhone = await _fb.resolveReferralOwner(incoming);
+          if (ownerPhone != null) {
+            await _fb.trackReferralUse(incoming, p.phone);
+            final newCount = await _fb.incrementReferralCount(ownerPhone);
+            final withinCap = newCount == null || newCount <= WalletService.maxReferralCountForCoins;
+            if (withinCap) {
+              await _fb.awardReferralCoins(incoming, ownerPhone, p.phone);
+            }
+          }
+        }
+      } catch (_) {
+        // Non-fatal — same as completeRegister(): referral crediting
+        // failing shouldn't block wallet activation from completing.
+      }
+    }
+
     _pendingMigrate = null;
-    await _completeLogin(p.phone, result.userData!);
+    await _completeLogin(p.phone, userData);
     return null;
   }
 
@@ -869,7 +972,7 @@ class AppState extends ChangeNotifier {
 
   void _persistCart() {
     StorageService.saveCart(cart);
-    if (isAuthenticated) _fb.syncCartDebounced(user!.phone, cart);
+    if (isAuthenticated && user!.hasServerAccount) _fb.syncCartDebounced(user!.phone, cart);
     notifyListeners();
   }
 
@@ -896,6 +999,7 @@ class AppState extends ChangeNotifier {
     String? coinPassword,
   }) async {
     if (!isAuthenticated) return 'not_authenticated';
+    if (!await _ensureBasicAccountExists()) return 'connection_error';
 
     // 🚫 Blocked-account guard — re-read live, same as submitCheckout()'s
     // fresh users/{phone}/blocked check (don't trust a possibly-stale
@@ -1070,7 +1174,7 @@ class AppState extends ChangeNotifier {
     // like, silently reverting to an empty list on next launch.
     notifyListeners();
     await StorageService.saveLikes(likes);
-    if (isAuthenticated) _fb.syncLikes(user!.phone, likes);
+    if (isAuthenticated && user!.hasServerAccount) _fb.syncLikes(user!.phone, likes);
   }
 
   // ---------------- Category / search filter ----------------
@@ -1229,11 +1333,24 @@ class _PendingRegister {
 }
 
 /// Held between startMigrate() and completeMigrate()/resendMigrateCode()
-/// — mirrors _authMigratePending in main-config.js.
+/// — mirrors _authMigratePending in main-config.js. [name]/[myReferralCode]/
+/// [incomingReferralCode] are only set when this migrate is actually a
+/// basic-tier account's wallet activation (myReferralCode != null is how
+/// completeMigrate() tells the two cases apart).
 class _PendingMigrate {
   final String phone;
   final String email;
   final String password;
+  final String? name;
+  final String? myReferralCode;
+  final String? incomingReferralCode;
 
-  _PendingMigrate({required this.phone, required this.email, required this.password});
+  _PendingMigrate({
+    required this.phone,
+    required this.email,
+    required this.password,
+    this.name,
+    this.myReferralCode,
+    this.incomingReferralCode,
+  });
 }

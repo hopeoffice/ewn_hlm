@@ -144,8 +144,8 @@ class ProfileScreen extends StatelessWidget {
                   sub: app.isAuthenticated
                       ? S.t('people_invited', lang).replaceAll('{n}', '${app.referralCount}')
                       : S.t('refer_sub', lang),
-                  onTap: () => _requireAuth(context, app, () =>
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen()))),
+                  onTap: () => _requireAuth(context, app, () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => app.isWalletActivated ? const ReferralScreen() : const EditProfileScreen()))),
                 ),
                 _MenuItem(
                   emoji: '🌐',

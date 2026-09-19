@@ -434,24 +434,17 @@ class FirebaseService {
     );
   }
 
-  /// POST /registerBasic — creates a phone+name-only "basic" account
+  /// POST /registerBasic — creates a bare phone-only "basic" account
   /// directly (no email code round-trip; there's no email to send one
-  /// to). [referralCode] is this NEW user's own generated code (mirrors
-  /// `myCode` in the register flow), not an incoming one they typed —
-  /// the caller credits any incoming referral separately afterward,
-  /// same as completeRegister() does.
-  /// Errors: 'invalid_phone', 'invalid_name', 'phone_taken', 'rate_limited'.
-  Future<AuthResult> registerBasic({
-    required String phone,
-    required String name,
-    required String referralCode,
-  }) async {
+  /// to, and no name yet either — that's collected later at wallet
+  /// activation). Errors: 'invalid_phone', 'phone_taken', 'rate_limited'.
+  Future<AuthResult> registerBasic({required String phone}) async {
     try {
       final res = await http
           .post(
             Uri.parse('$workerBaseUrl/registerBasic'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'phone': phone, 'name': name, 'referralCode': referralCode}),
+            body: jsonEncode({'phone': phone}),
           )
           .timeout(const Duration(seconds: 8));
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -464,21 +457,18 @@ class FirebaseService {
     }
   }
 
-  /// POST /loginBasic — phone + name, the basic-tier account's only
-  /// "credential". Name is compared server-side normalized (trim +
-  /// collapsed spaces + lowercase), same 5-wrong/15-min lockout as
-  /// password login. Errors: 'invalid_input', 'user_not_found',
-  /// 'wallet_account' (already has email+password — caller should route
-  /// to the normal password login instead), 'migration_required' (legacy
-  /// PIN account — route to migrate), 'account_blocked',
-  /// 'locked_try_later', 'wrong_name'.
-  Future<AuthResult> loginBasic({required String phone, required String name}) async {
+  /// POST /loginBasic — phone number alone; at this tier there's no
+  /// other credential to check. Errors: 'user_not_found', 'wallet_account'
+  /// (already has email+password — caller should route to the normal
+  /// password login instead), 'migration_required' (legacy PIN account —
+  /// route to migrate), 'account_blocked'.
+  Future<AuthResult> loginBasic({required String phone}) async {
     try {
       final res = await http
           .post(
             Uri.parse('$workerBaseUrl/loginBasic'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'phone': phone, 'name': name}),
+            body: jsonEncode({'phone': phone}),
           )
           .timeout(const Duration(seconds: 8));
       final body = jsonDecode(res.body) as Map<String, dynamic>;
