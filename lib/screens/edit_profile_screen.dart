@@ -103,7 +103,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _userFuture,
         builder: (context, snap) {
-          if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+          // BUGFIX: `snap.hasData` is `data != null` — for a brand-new
+          // phone (lazy account creation means checkPhone() correctly
+          // returns null, since no users/{phone} record exists yet),
+          // that stayed false FOREVER even after the future resolved,
+          // so the wizard never rendered — just an infinite spinner.
+          // Checking connectionState instead distinguishes "still
+          // waiting" from "loaded, and the result happens to be null".
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final u = snap.data ?? {};
 
           if (isBasic) {
