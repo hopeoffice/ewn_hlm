@@ -9,7 +9,7 @@ import 'wallet_screen.dart' show promptWalletPassword; // reuse the shared passw
 
 final RegExp _emailRe = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 final RegExp _passwordRe = RegExp(r'^\d{4}$');
-const int _wizardTotalSteps = 5;
+const int _wizardTotalSteps = 2;
 
 /// Ported from maskEmailClient() in main-config.js.
 String _maskEmail(String email) {
@@ -57,6 +57,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _wizardCodeCtrl = TextEditingController();
   bool _wizardLoading = false;
   String? _wizardError;
+  bool _codeSent = false;
   int _resendSeconds = 0;
   bool _resendBlocked = false;
 
@@ -258,7 +259,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   // ================================================================
-  //  BASIC-TIER — 5-step wallet-activation wizard
+  //  BASIC-TIER — 2-step wallet-activation wizard
   // ================================================================
 
   Widget _buildWizard(BuildContext context, AppState app, String lang, bool isAm) {
@@ -310,15 +311,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   List<Widget> _wizardStepContent(BuildContext context, AppState app, String lang, bool isAm) {
     switch (_wizardStep) {
       case 1:
-        return _wizardStepName(context, isAm);
-      case 2:
-        return _wizardStepPromo(context, isAm);
-      case 3:
-        return _wizardStepEmail(context, isAm);
-      case 4:
-        return _wizardStepPassword(context, app, lang, isAm);
+        return _wizardStep1(context, isAm);
       default:
-        return _wizardStepCode(context, app, lang, isAm);
+        return _wizardStep2(context, app, lang, isAm);
     }
   }
 
@@ -358,28 +353,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Text(_wizardError!, style: const TextStyle(color: AppTheme.danger)),
       );
 
-  // ---- Step 1: name ----
-  List<Widget> _wizardStepName(BuildContext context, bool isAm) => [
-        _wizardTitle(
-          isAm ? 'ስምዎ ማን ይባላል?' : "What's your name?",
-          isAm ? 'ይህ ስም በትዕዛዞችዎ እና በመላኪያ ደረሰኝ ላይ ይታያል።' : 'This name will appear on your orders and delivery receipts.',
-        ),
+  // ---- Step 1/2: name + password + confirm + promo code (optional) —
+  // reuses the exact old register-step field labels/order, just without
+  // email (which moved to step 2). No network call happens here — this
+  // is purely local until "ላክ ኮድ" is pressed on step 2. ----
+  List<Widget> _wizardStep1(BuildContext context, bool isAm) => [
+        _wizardTitle(S.t('register_title', _lang), S.t('register_sub', _lang)),
         TextField(
           controller: _wizardNameCtrl,
           autofocus: true,
           keyboardType: TextInputType.name,
-          decoration: InputDecoration(
-            labelText: S.t('full_name', _lang),
-            helperText: isAm ? 'ሙሉ ስምዎን ያስገቡ' : 'Enter your full name',
-            border: const OutlineInputBorder(),
-          ),
+          decoration: InputDecoration(labelText: S.t('full_name', _lang), border: const OutlineInputBorder()),
+        ),
+        const SizedBox(height: 12),
+        PasswordField(controller: _wizardPasswordCtrl, labelText: S.t('pin_code', _lang)),
+        const SizedBox(height: 12),
+        PasswordField(controller: _wizardPassword2Ctrl, labelText: S.t('pin_confirm', _lang)),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _wizardPromoCtrl,
+          textCapitalization: TextCapitalization.characters,
+          decoration: InputDecoration(labelText: S.t('promo_code_label', _lang), border: const OutlineInputBorder()),
         ),
         if (_wizardError != null) _wizardErrorText(),
         _wizardNav(
           onNext: () {
             final name = _wizardNameCtrl.text.trim();
+            final password = _wizardPasswordCtrl.text.trim();
+            final password2 = _wizardPassword2Ctrl.text.trim();
             if (name.length < 2) {
               setState(() => _wizardError = S.t('invalid_name', _lang));
+              return;
+            }
+            if (!_passwordRe.hasMatch(password)) {
+              setState(() => _wizardError = S.t('invalid_password', _lang));
+              return;
+            }
+            if (password != password2) {
+              setState(() => _wizardError = S.t('pin_mismatch', _lang));
               return;
             }
             setState(() {
@@ -391,184 +402,112 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ];
 
-  // ---- Step 2: promo code (optional) ----
-  List<Widget> _wizardStepPromo(BuildContext context, bool isAm) => [
-        _wizardTitle(
-          isAm ? 'የግብዣ ኮድ አለዎት?' : 'Have an invite code?',
-          isAm
-              ? 'ጓደኛዎ የጋበዙበት ኮድ ካለ እዚህ ያስገቡ። ኮድ ከሌለዎት ይህን ባዶ ትተው ይቀጥሉ።'
-              : "If a friend invited you, enter their code here. If not, leave this blank and continue.",
-        ),
-        TextField(
-          controller: _wizardPromoCtrl,
-          autofocus: true,
-          textCapitalization: TextCapitalization.characters,
-          decoration: InputDecoration(
-            labelText: S.t('promo_code_label', _lang),
-            helperText: isAm ? 'አማራጭ ነው' : 'Optional',
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        _wizardNav(
-          onBack: () => setState(() => _wizardStep = 1),
-          onNext: () => setState(() => _wizardStep = 3),
-          nextLabel: isAm ? 'ቀጥል' : 'Next',
-        ),
-      ];
-
-  // ---- Step 3: email ----
-  List<Widget> _wizardStepEmail(BuildContext context, bool isAm) => [
-        _wizardTitle(
-          isAm ? 'ኢሜል አድራሻዎ' : 'Your email address',
-          isAm
-              ? 'የማረጋገጫ ኮድ ወደዚህ ኢሜል እንልካለን። ዋሌትዎን መልሰው ለማግኘት (recovery) ያስፈልጋል።'
-              : "We'll send a verification code to this email. You'll need it to recover your wallet later.",
-        ),
+  // ---- Step 2/2: email, then the code box+button — ported to look
+  // exactly like the old _verifyStep's Row(TextField + ElevatedButton),
+  // just reachable without any code having been auto-sent first. No
+  // code is ever sent until this button is actually pressed. ----
+  List<Widget> _wizardStep2(BuildContext context, AppState app, String lang, bool isAm) => [
+        _wizardTitle(S.t('enter_code_title', lang), S.t('migrate_sub', lang)),
         TextField(
           controller: _wizardEmailCtrl,
           autofocus: true,
+          enabled: !_codeSent,
           keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-            labelText: S.t('email_address', _lang),
-            helperText: isAm ? 'ትክክለኛ የሚሰራ ኢሜል ያስገቡ' : 'Use a real, working email',
-            border: const OutlineInputBorder(),
-          ),
+          decoration: InputDecoration(labelText: S.t('email_address', lang), border: const OutlineInputBorder()),
         ),
-        if (_wizardError != null) _wizardErrorText(),
-        _wizardNav(
-          onBack: () => setState(() {
-            _wizardError = null;
-            _wizardStep = 2;
-          }),
-          onNext: () {
-            if (!_emailRe.hasMatch(_wizardEmailCtrl.text.trim())) {
-              setState(() => _wizardError = S.t('invalid_email', _lang));
-              return;
-            }
-            setState(() {
-              _wizardError = null;
-              _wizardStep = 4;
-            });
-          },
-          nextLabel: isAm ? 'ቀጥል' : 'Next',
-        ),
-      ];
-
-  // ---- Step 4: password + confirm (submits — this is where the
-  // server is actually contacted for the first time in the wizard) ----
-  List<Widget> _wizardStepPassword(BuildContext context, AppState app, String lang, bool isAm) => [
-        _wizardTitle(
-          isAm ? 'ፓስዎርድ ይፍጠሩ' : 'Create a password',
-          isAm ? 'ዋሌትዎን ለመክፈት እና ኮይን ለመጠቀም የሚያስፈልግ 4-አሃዝ ፓስዎርድ ነው።' : "A 4-digit password you'll use to open your wallet and use coins.",
-        ),
-        PasswordField(
-          controller: _wizardPasswordCtrl,
-          labelText: S.t('pin_code', lang),
-          autofocus: true,
-        ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(isAm ? '4 ቁጥር ብቻ (ፊደል ሳይጨምር)' : '4 digits only, numbers',
-              style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
-        ),
-        PasswordField(controller: _wizardPassword2Ctrl, labelText: S.t('pin_confirm', lang)),
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.only(left: 4),
-          child: Text(isAm ? 'ፓስዎርድዎን ዳግም ያስገቡ' : 'Re-enter your password',
-              style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
-        ),
-        if (_wizardError != null) _wizardErrorText(),
-        _wizardNav(
-          onBack: () => setState(() {
-            _wizardError = null;
-            _wizardStep = 3;
-          }),
-          onNext: () => _submitWizardActivation(context, app, lang),
-          nextLabel: isAm ? '🪙 ዋሌት አግብር' : '🪙 Activate Wallet',
-        ),
-      ];
-
-  Future<void> _submitWizardActivation(BuildContext context, AppState app, String lang) async {
-    final password = _wizardPasswordCtrl.text.trim();
-    final password2 = _wizardPassword2Ctrl.text.trim();
-    if (!_passwordRe.hasMatch(password)) {
-      setState(() => _wizardError = S.t('invalid_password', lang));
-      return;
-    }
-    if (password != password2) {
-      setState(() => _wizardError = S.t('pin_mismatch', lang));
-      return;
-    }
-
-    setState(() {
-      _wizardLoading = true;
-      _wizardError = null;
-    });
-    final err = await app.startMigrate(
-      phone: app.user!.phone,
-      email: _wizardEmailCtrl.text.trim(),
-      password: password,
-      name: _wizardNameCtrl.text.trim(),
-      incomingReferralCode: _wizardPromoCtrl.text.trim().isEmpty ? null : _wizardPromoCtrl.text.trim(),
-    );
-    setState(() => _wizardLoading = false);
-    if (err == null) {
-      _wizardCodeCtrl.clear();
-      _startResendTimer();
-      setState(() => _wizardStep = 5);
-    } else {
-      setState(() => _wizardError = _wizardErrorText2(err, lang));
-    }
-  }
-
-  // ---- Step 5: code confirmation ----
-  List<Widget> _wizardStepCode(BuildContext context, AppState app, String lang, bool isAm) => [
-        _wizardTitle(
-          isAm ? 'ኢሜልዎን ያረጋግጡ' : 'Confirm your email',
-          (isAm ? 'ወደ ' : 'A 5-digit code was sent to ') +
-              _wizardEmailCtrl.text.trim() +
-              (isAm ? ' የተላከውን 5-አሃዝ ኮድ ያስገቡ።' : '. Enter it below.'),
-        ),
-        TextField(
-          controller: _wizardCodeCtrl,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          maxLength: 5,
-          decoration: InputDecoration(
-            hintText: S.t('enter_code_placeholder', lang),
-            helperText: isAm ? 'ኮዱ ለ10 ደቂቃ ይሰራል' : 'The code is valid for 10 minutes',
-            border: const OutlineInputBorder(),
-          ),
-        ),
+        const SizedBox(height: 16),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_resendBlocked)
-              Text(S.t('resend_limit_reached', lang), style: const TextStyle(fontSize: 12, color: AppTheme.danger))
-            else if (_resendSeconds > 0)
-              Text(isAm ? 'ድጋሚ ላክ በ ${_resendSeconds}ሰ' : 'Resend in ${_resendSeconds}s',
-                  style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context)))
-            else
-              TextButton(onPressed: () => _resendWizardCode(context, app), child: Text(S.t('send_code_btn', lang))),
+            Expanded(
+              child: TextField(
+                controller: _wizardCodeCtrl,
+                keyboardType: TextInputType.number,
+                maxLength: 5,
+                decoration: InputDecoration(
+                    hintText: S.t('enter_code_placeholder', lang), border: const OutlineInputBorder()),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: (_resendSeconds > 0 || _resendBlocked || _wizardLoading)
+                  ? null
+                  : () => _wizardSendOrResend(context, app, lang),
+              child: _wizardLoading
+                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text(S.t('send_code_btn', lang)),
+            ),
           ],
         ),
+        if (_resendBlocked)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(S.t('resend_limit_reached', lang), style: const TextStyle(fontSize: 12, color: AppTheme.danger)),
+          )
+        else if (_resendSeconds > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              isAm ? 'ድጋሚ ላክ በ ${_resendSeconds}ሰ' : 'Resend in ${_resendSeconds}s',
+              style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context)),
+            ),
+          ),
         if (_wizardError != null) _wizardErrorText(),
         _wizardNav(
-          onNext: () => _confirmWizardCode(context, app, isAm),
+          onBack: _codeSent
+              ? null
+              : () => setState(() {
+                    _wizardError = null;
+                    _wizardStep = 1;
+                  }),
+          onNext: _codeSent ? () => _confirmWizardCode(context, app, isAm) : null,
           nextLabel: S.t('confirm_code_btn', lang),
         ),
       ];
 
-  Future<void> _resendWizardCode(BuildContext context, AppState app) async {
+  /// The Row button next to the code field — first press validates the
+  /// email and actually sends the code (this is the ONLY thing that
+  /// triggers a send; nothing auto-sends); every press after that is a
+  /// plain resend of the same pending code request.
+  Future<void> _wizardSendOrResend(BuildContext context, AppState app, String lang) async {
     if (_resendSeconds > 0 || _resendBlocked) return;
+
+    if (!_codeSent) {
+      final email = _wizardEmailCtrl.text.trim();
+      if (!_emailRe.hasMatch(email)) {
+        setState(() => _wizardError = S.t('invalid_email', lang));
+        return;
+      }
+      setState(() {
+        _wizardLoading = true;
+        _wizardError = null;
+      });
+      final err = await app.startMigrate(
+        phone: app.user!.phone,
+        email: email,
+        password: _wizardPasswordCtrl.text.trim(),
+        name: _wizardNameCtrl.text.trim(),
+        incomingReferralCode: _wizardPromoCtrl.text.trim().isEmpty ? null : _wizardPromoCtrl.text.trim(),
+      );
+      setState(() => _wizardLoading = false);
+      if (err == null) {
+        _wizardCodeCtrl.clear();
+        _startResendTimer();
+        setState(() => _codeSent = true);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('code_sent', lang))));
+      } else {
+        setState(() => _wizardError = _wizardErrorText2(err, lang));
+      }
+      return;
+    }
+
     final err = await app.resendMigrateCode();
     if (err == null) {
       _startResendTimer();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('code_sent', app.lang))));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('code_sent', lang))));
     } else if (mounted) {
       setState(() {
-        _wizardError = _wizardErrorText2(err, app.lang);
+        _wizardError = _wizardErrorText2(err, lang);
         if (err == 'blocked') _resendBlocked = true;
       });
     }
